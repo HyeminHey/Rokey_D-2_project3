@@ -23,6 +23,7 @@ from qulido_robot_msgs.srv import AiCompute
 
 
 class OrchestratorState(Enum):
+    WAIT_WAKE = auto()
     WAIT_START = auto()
     HUMAN_TURN = auto()
     ROBOT_THINK = auto()
@@ -39,12 +40,14 @@ class GameOrchestratorNode(Node):
 
         # Parameters
         self.declare_parameter("speech_service", "/speech_to_text")
+        self.declare_parameter("wake_service", "/wakeup_robot")
         self.declare_parameter("vision_service", "/vision/get_board_state")
         self.declare_parameter("ai_service", "/ai_agent/get_robot_move")
         self.declare_parameter("motion_action", "/execute_motion")
         self.declare_parameter("game_state_topic", "/qulido/game_state")
 
         self.speech_srv = self.get_parameter("speech_service").value
+        self.wake_srv = self.get_parameter("wake_service").value
         self.vision_srv = self.get_parameter("vision_service").value
         self.ai_srv = self.get_parameter("ai_service").value
         self.motion_action_name = self.get_parameter("motion_action").value
@@ -56,6 +59,7 @@ class GameOrchestratorNode(Node):
 
         # Service Clients
         self.speech_client = self.create_client(Trigger, self.speech_srv)
+        self.wake_client = self.create_client(Trigger, self.wake_srv)
         self.vision_client = self.create_client(GetBoardState, self.vision_srv)
         self.ai_client = self.create_client(AiCompute, self.ai_srv)
 
@@ -87,6 +91,17 @@ class GameOrchestratorNode(Node):
             if time.time() - start > timeout:
                 return False
         return True
+    
+    # ---------------- WAKE -----------------
+    def call_wake(self, timeout=3.0):
+        if not self.wait_service(self.wake_client, 2.0):
+            return False, ""
+        req = Trigger.Request()
+        fut = self.wake_client.call_async(req)
+        rclpy.spin_until_future_complete(self, fut, timeout_sec=timeout)
+        if not fut.done():
+            return False, ""
+        return True, fut.result().message
 
     # ---------------- SPEECH -----------------
     def call_speech(self, timeout=3.0):
@@ -270,9 +285,17 @@ class GameOrchestratorNode(Node):
     # ------------------------------------------------------------------
     def main_loop(self):
         try:
+            
+            # ---------------- WAIT_WAKE ----------------
+            if self.state == OrchestratorState.WAIT_WAKE:
+                self.log("Say '헤이 쿼리' to begin.")
+                ok, txt = self.call_wake()
+                if ok and 'awake' in txt.lower():
+                    self.log("Robot awaken → WAIT_START")
+                    self.state = OrchestratorState.WAIT_START
 
             # ---------------- WAIT_START ----------------
-            if self.state == OrchestratorState.WAIT_START:
+            elif self.state == OrchestratorState.WAIT_START:
                 self.log("Say 'start game' to begin.")
                 ok, txt = self.call_speech()
                 if ok and 'start' in txt.lower():
