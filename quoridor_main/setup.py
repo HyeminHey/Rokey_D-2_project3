@@ -13,6 +13,14 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, glob('launch/*.launch.py')),
+        
+        # Wakeup word 키워드 파일 (영/한 .ppn)
+        (os.path.join('share', package_name, 'keywords'),
+            glob('resource/keywords/*.ppn')),
+        
+        # ✨ 한국어 언어 모델 파일 (.pv) 추가
+        (os.path.join('share', package_name, 'models'),
+            glob('resource/models/*.pv')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -30,10 +38,18 @@ setup(
             'game_orchestrator = quoridor_main.game_orchestrator_node:main',
             'robot_ctrl = quoridor_main.robot_ctrl_node:main',
             'robot_ctrl_client = quoridor_main.robot_ctrl_client:main',
-            'speech_service = quoridor_main.speech_service_node:main',
+            'speech_service_node = quoridor_main.speech_service_node:main',
             'speech_service_client = quoridor_main.speech_service_client:main',
             'board_ros = quoridor_main.board_ros_node:main',
             'board_ros_client = quoridor_main.test_cli:main',
+            
+            # 한국어 깨우기 노드
+            'wakeup_word_node_korean = quoridor_main.wakeup_word_node_korean:main',
+            
+            
+            
+            # 테스트 orchestrator
+            'test_orchestrator = quoridor_main.test_orchestrator:main',
         ],
     },
 )

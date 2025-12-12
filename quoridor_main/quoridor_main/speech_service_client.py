@@ -3,7 +3,7 @@
 
 """
 Speech Service 실전 테스트 클라이언트
-오케스트레이터의 게임 플로우를 시뮬레이션
+오케스트레이터의 게임 플로우를 시뮬레이션 (난이도 인식 포함)
 """
 
 import rclpy
@@ -29,6 +29,7 @@ class GameFlowSimulator(Node):
         
         # 게임 상태
         self.game_started = False
+        self.difficulty = "normal"  # 게임 난이도 저장
         self.turn_count = 0
     
     def call_speech_service(self, timeout=30.0):
@@ -63,6 +64,9 @@ class GameFlowSimulator(Node):
         self.get_logger().info("\n" + "="*60)
         self.get_logger().info("🎮 게임 시작 대기 중...")
         self.get_logger().info("   '게임 시작', '시작해', '레츠고' 등을 말해주세요")
+        self.get_logger().info("   난이도도 함께 말씀하시면 됩니다:")
+        self.get_logger().info("   예) '게임 시작 난이도는 쉽게'")
+        self.get_logger().info("   예) '어려운 난이도로 시작'")
         self.get_logger().info("="*60)
         
         while not self.game_started:
@@ -73,8 +77,20 @@ class GameFlowSimulator(Node):
                 time.sleep(1)
                 continue
             
-            if message == "start game":
-                self.get_logger().info("✅ 게임 시작 명령 인식!")
+            # "start game, difficulty" 형식 파싱
+            if message.startswith("start game"):
+                parts = message.split(", ")
+                
+                if len(parts) == 2:
+                    # 난이도 정보 있음
+                    command, difficulty = parts
+                    self.difficulty = difficulty
+                    self.get_logger().info(f"✅ 게임 시작 명령 인식! (난이도: {difficulty})")
+                else:
+                    # 난이도 정보 없음 (이미 서버에서 normal로 설정됨)
+                    self.difficulty = "normal"
+                    self.get_logger().info(f"✅ 게임 시작 명령 인식! (난이도: {self.difficulty} - 기본값)")
+                
                 self.game_started = True
                 return True
             elif message == "":
@@ -109,7 +125,7 @@ class GameFlowSimulator(Node):
     def simulate_robot_turn(self):
         """로봇 턴 시뮬레이션 (ROBOT_TURN 상태)"""
         self.get_logger().info("\n" + "="*60)
-        self.get_logger().info("🤖 로봇 턴 시작...")
+        self.get_logger().info(f"🤖 로봇 턴 시작... (난이도: {self.difficulty})")
         self.get_logger().info("   (실제로는 AI 계산 + 모션 실행)")
         self.get_logger().info("="*60)
         
@@ -123,10 +139,12 @@ class GameFlowSimulator(Node):
     def run_game_loop(self):
         """전체 게임 루프 실행"""
         print("\n" + "="*60)
-        print("🎯 Quoridor Game Flow Simulator")
+        print("🎯 Quoridor Game Flow Simulator (With Difficulty)")
         print("="*60)
         print("\n이 시뮬레이터는 다음 플로우를 테스트합니다:")
-        print("1. 게임 시작 대기 → '게임 시작' 인식 (최초 1회)")
+        print("1. 게임 시작 대기 → '게임 시작' + 난이도 인식 (최초 1회)")
+        print("   - 난이도: 쉬움(easy), 보통(normal), 어려움(hard)")
+        print("   - 난이도 미지정 시 자동으로 '보통'으로 설정됩니다")
         print("2. 사용자 턴 → '턴 종료' 인식")
         print("3. 로봇 턴 (시뮬레이션)")
         print("4. 2-3 반복... (게임 종료까지)")
@@ -141,7 +159,7 @@ class GameFlowSimulator(Node):
             return
         
         self.get_logger().info("\n" + "🎮"*30)
-        self.get_logger().info("게임이 시작되었습니다!")
+        self.get_logger().info(f"게임이 시작되었습니다! (난이도: {self.difficulty})")
         self.get_logger().info("이제부터 턴 종료 신호만 받습니다.")
         self.get_logger().info("🎮"*30)
         time.sleep(2)
@@ -173,6 +191,7 @@ class GameFlowSimulator(Node):
         self.get_logger().info("\n" + "="*60)
         self.get_logger().info("🎊 게임 시뮬레이션 완료!")
         self.get_logger().info(f"   총 {self.turn_count}턴 진행됨")
+        self.get_logger().info(f"   난이도: {self.difficulty}")
         self.get_logger().info("="*60)
 
 
