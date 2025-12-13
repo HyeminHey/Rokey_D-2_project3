@@ -35,19 +35,20 @@ class BoardRosNode(Node):
         except:
             self.wall_color = None # Pygame 초기화 실패 시 대비
 
+        # #안돌리고 가능
         ##subprocessing
-        try:
-            script_path = os.path.join(
-                os.path.dirname(__file__),   # 한 단계만 올라감
-                "quoridor.py"
-            )
+        # try:
+        #     script_path = os.path.join(
+        #         os.path.dirname(__file__),   # 한 단계만 올라감
+        #         "quoridor.py"
+        #     )
 
-            log(f"[ROS] Running quoridor.py : {script_path}")
+        #     log(f"[ROS] Running quoridor.py : {script_path}")
 
-            subprocess.Popen(["python3", script_path])
+        #     subprocess.Popen(["python3", script_path])
 
-        except Exception as e:
-            log(f"[ERROR] Failed to run quoridor.py : {e}")
+        # except Exception as e:
+        #     log(f"[ERROR] Failed to run quoridor.py : {e}")
 
         self.srv = self.create_service(AiCompute, '/ai_agent/get_robot_move', self.board_state_callback)
         self.get_logger().info("AI service server ready: /ai_agent/get_robot_move")
