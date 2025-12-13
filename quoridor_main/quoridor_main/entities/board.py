@@ -40,6 +40,7 @@ class Board(Drawable):
         self.board: List[List[Cell]] = []
         self.computing = False  # True if a non-human player is moving
         self._state = None
+        self.won_player: int = None
 
         # Create NETWORK server
         try:
@@ -264,13 +265,20 @@ class Board(Drawable):
             
             self.do_action(ActionMovePawn(pawn.coord, cell.coord))
             self.draw()
-
+            
+            # if self.finished:
+            #     self.draw_player_info(self.player)
+            #     if self.won_player == 0:
+            #         return "player"
+            #     elif self.won_player == 1:
+            #         return "AI"
             if self.finished:
                 self.draw_player_info(self.player)
                 log("finished")
                 # reset하는 함수 만들어서 그거 트리거로 써야할까?
-                return "f"
-            
+                return None
+
+                
             self.next_player()
             self.draw_players_info()
             # 만약 다음이 AI라면 AI 턴 실행 
@@ -461,6 +469,8 @@ class Board(Drawable):
             self.msg(x, y, "Press any key to EXIT")
             #log 추가
             log(f"player {self.player} win! game finished")
+            self.won_player = self.player
+            log(f"player{self.won_player} won this game!")
 
     def msg(self, x, y, str_, color=cfg.FONT_COLOR, fsize=cfg.FONT_SIZE):
         font = pygame.font.SysFont(None, fsize)

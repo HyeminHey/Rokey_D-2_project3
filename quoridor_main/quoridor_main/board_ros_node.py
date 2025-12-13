@@ -2,7 +2,7 @@
 import subprocess
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String
 
 from quoridor_main.ai.action import ActionMovePawn, ActionPlaceWall
 from quoridor_main.entities.board import Board
@@ -60,9 +60,9 @@ class BoardRosNode(Node):
                     self.listener_callback,
                     10)
         self.sub
-        log("Level Subscriber Node is Running. Waiting for /game_level messages...")
+        self.get_logger().info("Level Subscriber Node is Running. Waiting for /game_level messages...")
 
-
+        self.pub = self.create_publisher(String, '/game_finished', 10)
 
     def listener_callback(self, msg):
             level = msg.data
@@ -83,9 +83,17 @@ class BoardRosNode(Node):
         if self.last_request:
                 act_suc = self.board.apply_player_action(self.last_request)
 
-        #finished (player0가 이겼을 때만 발동될거임 아마)
-        if act_suc == "f":
+
+        #finished
+        if type(self.board.won_player) == int:
             response.ai_cmd = [0, 0, 0]
+            msg = String()
+            if self.board.won_player == 0:
+                msg.data = "player"
+            elif self.board.won_player == 1:
+                msg.data = "AI"
+            self.pub.publish(msg)
+            self.get_logger().info(f"Game Finished Topic published. Winner is {msg.data}")
             return response
 
         if act_suc:
@@ -111,36 +119,36 @@ class BoardRosNode(Node):
             response.ai_cmd = [0, 1, 1]
             return response
 
-    def board_state_to_actions(self, player_move_state, last_pawn_positions=None):
+    # def board_state_to_actions(self, player_move_state, last_pawn_positions=None):
 
-        action = None
-        t = player_move_state[0]
-        r = player_move_state[1]
-        c = player_move_state[2]
+    #     action = None
+    #     t = player_move_state[0]
+    #     r = player_move_state[1]
+    #     c = player_move_state[2]
 
-        log(f"type = {t}, Coord = ({r}, {c})")
-        if abs(t) == 1:
-            if t == 1:
-                from_ = self.orig_pose
-                to_ = Coord(r, c)
-                action = ActionMovePawn(from_, to_)
-                self.orig_pose = Coord(r, c)
-                log(f"transformed to ActionMovePawn : {action}")
+    #     log(f"type = {t}, Coord = ({r}, {c})")
+    #     if abs(t) == 1:
+    #         if t == 1:
+    #             from_ = self.orig_pose
+    #             to_ = Coord(r, c)
+    #             action = ActionMovePawn(from_, to_)
+    #             self.orig_pose = Coord(r, c)
+    #             log(f"transformed to ActionMovePawn : {action}")
 
-        elif abs(t) == 2:
-            horiz = True if t == -2 else False  
-            wall = Wall(
-                coord=Coord(r, c), 
-                horiz=horiz,
-                screen=self.screen,   # __init__에서 저장한 screen 객체
-                board=self.board,     # 현재 노드의 board 객체
-                color=self.wall_color # 정의한 색상
-            )            
-            action = ActionPlaceWall(wall)
-            log(f"transformed to ActionPlaceWall : {action}")
+    #     elif abs(t) == 2:
+    #         horiz = True if t == -2 else False  
+    #         wall = Wall(
+    #             coord=Coord(r, c), 
+    #             horiz=horiz,
+    #             screen=self.screen,   # __init__에서 저장한 screen 객체
+    #             board=self.board,     # 현재 노드의 board 객체
+    #             color=self.wall_color # 정의한 색상
+    #         )            
+    #         action = ActionPlaceWall(wall)
+    #         log(f"transformed to ActionPlaceWall : {action}")
 
 
-        return action
+    #     return action
 
 
 
