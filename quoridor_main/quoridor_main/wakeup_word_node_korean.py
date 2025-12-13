@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from ament_index_python.packages import get_package_share_directory
 
 from std_msgs.msg import Bool, String
+from std_srvs.srv import Trigger
+
 
 # 환경 변수 로드
 load_dotenv()
@@ -34,18 +36,16 @@ class WakeupWordNode(Node):
         self.declare_parameter("keyword_filename", "hello-query_ko_linux_v4_0_0.ppn")  # v4.0.0 파일명
         self.declare_parameter("model_filename", "porcupine_params_ko.pv")
         self.declare_parameter("sensitivity", 0.7)
-        self.declare_parameter("wakeup_topic", "/quoridor/wakeup")
-        self.declare_parameter("status_topic", "/quoridor/wakeup_status")
         self.declare_parameter("audio_device_index", -1)
         self.declare_parameter("language", "ko")
+        self.declare_parameter("wake_service", "/wakeup_robot")
 
         keyword_filename = self.get_parameter("keyword_filename").value
         model_filename = self.get_parameter("model_filename").value
         sensitivity = self.get_parameter("sensitivity").value
-        wakeup_topic = self.get_parameter("wakeup_topic").value
-        status_topic = self.get_parameter("status_topic").value
         audio_device_index = self.get_parameter("audio_device_index").value
         language = self.get_parameter("language").value
+        self.wake_srv = self.get_parameter("wake_service").value
 
         # API Key 확인
         if not picovoice_api_key:
@@ -83,9 +83,14 @@ class WakeupWordNode(Node):
             self.get_logger().error(f"❌ 패키지 경로 오류: {e}")
             raise
 
-        # Publishers
-        self.wakeup_pub = self.create_publisher(Bool, wakeup_topic, 10)
-        self.status_pub = self.create_publisher(String, status_topic, 10)
+
+        self.wake_service = self.create_service(
+            Trigger,
+            self.wake_srv,
+            self.handle_wake_request
+        )
+
+        self.get_logger().info(f"✅ Wakeup Service 서버 생성: {self.wake_srv}")
 
         # Porcupine v4.0.0 초기화
         try:
@@ -154,82 +159,61 @@ class WakeupWordNode(Node):
         self.frame_count = 0
         self.last_log_time = time.time()
         self.language = language
+        self.listening = False
 
-        # 타이머 (프레임마다 체크)
-        timer_period = self.porcupine.frame_length / self.porcupine.sample_rate
-        self.create_timer(timer_period, self.check_wakeup)
 
         # 언어별 안내 메시지
         wakeup_phrase = "헤이 쿼리" if language == "ko" else "Hello Query"
         
-        self.log_status("대기 중...")
         self.get_logger().info("="*60)
         self.get_logger().info(f"🎤 Wakeup Word 노드 준비 완료 ({language.upper()})")
         self.get_logger().info(f"   '{wakeup_phrase}'를 명확하게 말하세요!")
-        self.get_logger().info(f"   신호 토픽: {wakeup_topic}")
         self.get_logger().info(f"   Test Orchestrator 연동 준비 완료")
         self.get_logger().info("="*60)
 
-    def log_status(self, text):
-        """상태 메시지 발행 (Test Orchestrator용)"""
-        msg = String()
-        msg.data = text
-        self.status_pub.publish(msg)
 
-    def check_wakeup(self):
-        """Wakeup word 체크 (타이머 콜백)"""
+    def handle_wake_request(self, request, response):
+        self.get_logger().info("🔔 Wakeup 요청 수신 → 청취 시작")
+
+        self.listening = True
+        self.detection_count = 0
+
         try:
-            # 프레임 카운터
-            self.frame_count += 1
-            
-            # 5초마다 동작 확인 로그
-            current_time = time.time()
-            if current_time - self.last_log_time > 5.0:
-                wakeup_phrase = "헤이 쿼리" if self.language == "ko" else "Hello Query"
-                self.get_logger().info(
-                    f"🎧 '{wakeup_phrase}' 청취 중... "
-                    f"(프레임: {self.frame_count}, 감지: {self.detection_count}회)"
+            while rclpy.ok() and self.listening:
+                pcm = self.stream.read(
+                    self.porcupine.frame_length,
+                    exception_on_overflow=False
                 )
-                self.last_log_time = current_time
+                pcm = struct.unpack_from(
+                    "h" * self.porcupine.frame_length, pcm
+                )
 
-            # 오디오 프레임 읽기
-            pcm = self.stream.read(
-                self.porcupine.frame_length,
-                exception_on_overflow=False
-            )
-            pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
+                keyword_index = self.porcupine.process(pcm)
 
-            # Porcupine 처리
-            keyword_index = self.porcupine.process(pcm)
+                if keyword_index >= 0:
+                    self.detection_count += 1
+                    self.listening = False
 
-            # Wakeup word 감지
-            if keyword_index >= 0:
-                self.detection_count += 1
-                wakeup_phrase = "헤이 쿼리" if self.language == "ko" else "Hello Query"
-                
-                # 신호 발행 (Test Orchestrator가 구독)
-                wakeup_msg = Bool()
-                wakeup_msg.data = True
-                self.wakeup_pub.publish(wakeup_msg)
+                    wakeup_phrase = "헤이 쿼리" if self.language == "ko" else "Hello Query"
 
-                # 상태 발행
-                self.log_status(f"🔔 '{wakeup_phrase}' 감지! (#{self.detection_count})")
-                
-                # 로그
-                self.get_logger().info("="*60)
-                self.get_logger().info(f"🔔 WAKEUP WORD 감지! (#{self.detection_count})")
-                self.get_logger().info(f"   감지어: {wakeup_phrase}")
-                self.get_logger().info(f"   토픽 발행: /quoridor/wakeup → True")
-                self.get_logger().info("="*60)
+                    self.get_logger().info("=" * 60)
+                    self.get_logger().info(f"🔔 WAKEUP WORD 감지! ({wakeup_phrase})")
+                    self.get_logger().info("=" * 60)
 
-        except IOError as e:
-            # 오디오 버퍼 오버플로우 등 일시적 오류는 무시
-            if e.errno == -9981:  # Input overflowed
-                pass
-            else:
-                self.get_logger().warn(f"오디오 읽기 오류: {e}")
+                    response.success = True
+                    response.message = "awake"
+
+                    return response
+
+                time.sleep(0.01)  # CPU 보호용
+
         except Exception as e:
-            self.get_logger().error(f"체크 오류: {e}")
+            self.get_logger().error(f"Wakeup 처리 중 오류: {e}")
+
+        response.success = False
+        response.message = "failed"
+        return response
+
 
     def destroy_node(self):
         """노드 종료 시 리소스 정리"""

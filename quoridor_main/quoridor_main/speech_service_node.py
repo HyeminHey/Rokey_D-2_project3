@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+import time
 
 # 기존 voice_processing 모듈 임포트
 from quoridor_main.voice_processing.stt import STT
@@ -35,7 +36,7 @@ class SpeechServiceNode(Node):
         
         # 파라미터 선언
         self.declare_parameter('service_name', '/speech_to_text')
-        self.declare_parameter('record_duration', 5.0)  # 녹음 시간
+        self.declare_parameter('record_duration', 6.0)  # 녹음 시간
         
         service_name = self.get_parameter('service_name').get_parameter_value().string_value
         self.record_duration = self.get_parameter('record_duration').get_parameter_value().double_value
@@ -197,59 +198,53 @@ class SpeechServiceNode(Node):
             return "none", "none"
     
     def speech_callback(self, request, response):
-        """
-        ROS2 서비스 콜백
-        Trigger 서비스:
-        - Request: 비어있음
-        - Response: success (bool), message (string)
-        
-        message 형식:
-        - "start game, easy"    : 게임 시작 (쉬움)
-        - "start game, normal"  : 게임 시작 (보통)
-        - "start game, hard"    : 게임 시작 (어려움)
-        - "end turn"            : 턴 종료
-        - ""                    : 명령 아님
-        """
         self.get_logger().info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         self.get_logger().info("📞 음성 인식 서비스 호출됨")
-        
-        # 1. 음성 입력
-        text = self.get_speech_text()
-        
-        if text is None or text.strip() == "":
-            response.success = False
-            response.message = ""
-            self.get_logger().warn("❌ 음성 인식 실패 또는 비어있음")
-            return response
-        
-        self.get_logger().info(f"📝 입력 텍스트: '{text}'")
-        
-        # 2. LLM 파싱 (명령어 + 난이도)
-        command, difficulty = self.parse_command(text)
-        
-        # 3. 결과 반환
-        if command == "start":
-            response.success = True
-            if difficulty in ["easy", "normal", "hard"]:
-                response.message = f"start game, {difficulty}"
-                self.get_logger().info(f"✅ 인식: 게임 시작 명령 (난이도: {difficulty})")
-            else:
-                # 난이도 미지정 시 기본값: normal
-                response.message = "start game, normal"
-                self.get_logger().info("✅ 인식: 게임 시작 명령 (난이도: normal - 기본값)")
-        elif command == "end":
-            response.success = True
-            response.message = "end turn"
-            self.get_logger().info("✅ 인식: 턴 종료 명령")
-        else:
-            response.success = True
-            response.message = ""  # 빈 문자열 = 명령 아님
-            self.get_logger().info("ℹ️  인식: 게임 명령 아님")
-        
-        self.get_logger().info(f"🔄 응답: success={response.success}, message='{response.message}'")
+
+        start_time = time.time()
+        timeout_sec = 6.0   # ⏱ 최대 청취 시간
+
+        while time.time() - start_time < timeout_sec:
+
+            text = self.get_speech_text()
+
+            if not text or text.strip() == "":
+                continue
+
+            self.get_logger().info(f"📝 입력 텍스트: '{text}'")
+
+            command, difficulty = self.parse_command(text)
+
+            # ---------- START ----------
+            if command == "start":
+                response.success = True
+                if difficulty in ["easy", "normal", "hard"]:
+                    response.message = f"start game, {difficulty}"
+                else:
+                    response.message = "start game, normal"
+
+                self.get_logger().info(
+                    f"✅ 게임 시작 인식 → {response.message}"
+                )
+                return response   # 🔴 즉시 종료
+
+            # ---------- END ----------
+            if command == "end":
+                response.success = True
+                response.message = "end turn"
+                self.get_logger().info("✅ 턴 종료 인식")
+                return response   # 🔴 즉시 종료
+
+            # 명령 아님 → 계속 듣기
+            self.get_logger().info("ℹ️ 명령 아님 → 계속 청취")
+
+        # ---------- TIMEOUT ----------
+        response.success = True
+        response.message = ""
+        self.get_logger().info("⏱ 음성 인식 타임아웃 → 명령 없음")
         self.get_logger().info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        
         return response
+
 
 
 def main(args=None):
