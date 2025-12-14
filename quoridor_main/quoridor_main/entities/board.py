@@ -1,5 +1,6 @@
 from typing import Set, List, Union
 import pygame
+from pygame import Color
 
 from quoridor_main.helpers import log
 from quoridor_main.network.server import EnhancedServer, Functions
@@ -238,6 +239,10 @@ class Board(Drawable):
 
     def apply_player_action(self, req_list):
 
+        #erase error log
+        error_erase_rect = pygame.Rect(320, 750, 250, cfg.RULE_SIZE + 10)
+        pygame.draw.rect(self.screen, cfg.FONT_BG_COLOR, error_erase_rect, 0)
+
         t = req_list[0]
         r = req_list[1]
         c = req_list[2]
@@ -249,6 +254,8 @@ class Board(Drawable):
                 pawn = self.current_player
                 if not pawn.can_move(cell.coord):
                     log(f"You can't move to ({cell.coord.row}, {cell.coord.col})")
+                    # error msg
+                    self.msg(320, 750, f"You can't move to ({cell.coord.row}, {cell.coord.col})", color=Color(243, 97, 166), fsize=cfg.RULE_SIZE + 6)                    
                     return False
             
             self.do_action(ActionMovePawn(pawn.coord, cell.coord))
@@ -298,6 +305,8 @@ class Board(Drawable):
         
             elif not avail:
                 log(f"You can't put wall on ({wall.coord.row}, {wall.coord.col})")
+                # error msg
+                self.msg(320, 750, f"You can't put wall on ({wall.coord.row}, {wall.coord.col})", color=Color(243, 97, 166), fsize=cfg.RULE_SIZE + 6)   
                 return False
 
 

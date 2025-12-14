@@ -96,7 +96,7 @@ class BoardRosNode(Node):
             pygame.display.set_caption(cfg.GAME_TITLE)
             screen = pygame.display.get_surface()
 
-            screen.fill(Color(255, 255, 255))
+            screen.fill(Color(75, 75, 75))
             board = core.BOARD = Board(screen)
             board.draw()
             log('System initialized OK')
@@ -142,7 +142,7 @@ def main(args=None):
     pygame.display.set_caption(cfg.GAME_TITLE)
     screen = pygame.display.get_surface()
 
-    screen.fill(Color(255, 255, 255))
+    screen.fill(Color(75, 75, 75))
     board = core.BOARD = Board(screen)
     board.draw()
     log('System initialized OK')

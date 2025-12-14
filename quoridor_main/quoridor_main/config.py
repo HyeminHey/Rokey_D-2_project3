@@ -44,8 +44,8 @@ PAWN_HEIGHT = CELL_HEIGHT - 15
 
 ### COLORS ###
 # Font Color & SIZE
-FONT_COLOR = Color(0, 10, 50)
-FONT_BG_COLOR = Color(255, 255, 255) 
+FONT_COLOR = Color(255, 255, 255)
+FONT_BG_COLOR = Color(75, 75, 75) 
 FONT_SIZE = 30 #16
 
 # Board Background and Border color and look
@@ -69,7 +69,7 @@ PAWN_BORDER_COL = Color(0, 0, 0) # Color(188, 188, 80)  # Yellow
 # Gauge bars
 GAUGE_WIDTH = CELL_WIDTH * 3
 GAUGE_HEIGHT = 15
-GAUGE_COLOR = Color(5, 0, 153)
+GAUGE_COLOR = Color(21, 21, 21)
 GAUGE_BORDER_COLOR = Color(0, 0, 0)
 
 # Other constants
