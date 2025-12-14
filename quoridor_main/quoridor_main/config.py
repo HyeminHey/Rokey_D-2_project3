@@ -36,6 +36,7 @@ NUM_WALLS = 6
 
 # Messages Font
 WHO_SIZE = 50
+RULE_SIZE = 22
 
 # Pawn size
 PAWN_WIDTH = CELL_WIDTH - 15

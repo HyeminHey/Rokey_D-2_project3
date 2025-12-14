@@ -364,9 +364,51 @@ class Board(Drawable):
         """ Draws player pawn at board + padding_offset
         """
 # self, x, y, str_, color=cfg.FONT_COLOR, fsize=cfg.FONT_SIZE
+
+        # MESSAGES
+
         # pawn who? msg
         self.msg(140, 600, "AI", fsize=cfg.WHO_SIZE) 
         self.msg(370, 600, "player", fsize=cfg.WHO_SIZE) 
+
+        # rule msg
+        RULE_LINES = [
+            "Quoridor – Game Rules",
+            "",
+            "Goal",
+            "Be the first player to move your pawn to the opposite side of the board.",
+            "",
+            "Turn",
+            "On your turn, choose one action:",
+            "- Move your pawn one square (or jump over an opponent if possible), or",
+            "- Place one wall on the board.",
+            "",
+            "Movement",
+            "Pawns move up, down, left, or right.",
+            "If another pawn blocks the way, you may jump over it.",
+            "Diagonal moves are allowed only when a direct jump is blocked by a wall.",
+            "",
+            "Walls",
+            "Each player has a limited number of walls.",
+            "Walls block movement but cannot completely block all paths.",
+            "Every pawn must always have at least one path to its goal.",
+            "",
+            "Winning",
+            "The first player who reaches the goal row wins the game."
+        ]
+        a = 600
+        b = 20
+        line_gap = 25  # 줄 간격
+
+        for line in RULE_LINES:
+            if len(line) < 15:
+                self.msg(a, b, line, fsize=cfg.RULE_SIZE + 3)
+            elif len(line) < 25:
+                self.msg(a, b, line, fsize=cfg.RULE_SIZE + 6)
+            else:
+                self.msg(a, b, line, fsize=cfg.RULE_SIZE)
+            b += line_gap
+
 
 
         pawn = self.pawns[player_num]
