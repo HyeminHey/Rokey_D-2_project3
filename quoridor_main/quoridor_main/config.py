@@ -14,7 +14,7 @@ __DEBUG__ = False
 FRAMERATE = 25
 
 # Config Options
-GAME_TITLE = 'Quoridor'
+GAME_TITLE = 'Quoridor Rokey D-2'
 DEFAULT_NUM_PLAYERS = 2
 
 # Cell size
