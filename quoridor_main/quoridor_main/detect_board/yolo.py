@@ -24,7 +24,8 @@ class YoloModel:
         img_node,
         duration=1.0,
         conf_th=0.5,
-        dist_th=30
+        dist_th=30,
+        angle_th=10.0,
     ):
         frames = self._get_frames(img_node, duration)
         results = self.model(frames, verbose=False)
@@ -41,6 +42,8 @@ class YoloModel:
                     continue
 
                 cls = self.id2name[int(box.cls[0])]
+                # if cls != "wall":
+                #     continue
                 mask = res.masks.xy[i].astype(np.int32)
 
                 # 🔹 centroid
@@ -51,6 +54,9 @@ class YoloModel:
                 cx = M["m10"] / M["m00"]
                 cy = M["m01"] / M["m00"]
 
+                # OBB (orientation)
+                rect = cv2.minAreaRect(mask)
+                angle = self._normalize_angle(rect)
                 # 🔹 mask bounding box → 방향 판별용
                 x, y, w, h = cv2.boundingRect(mask)
 
@@ -60,6 +66,7 @@ class YoloModel:
                     "score": score,
                     "w": w,
                     "h": h,
+                    "angle": angle,
                 })
 
         # 🔹 temporal fusion
@@ -87,14 +94,27 @@ class YoloModel:
             scores = np.array([g["score"] for g in group])
             widths  = np.array([g["w"] for g in group])
             heights = np.array([g["h"] for g in group])
+            angles  = np.array([g["angle"] for g in group])
+
+            mean_angle  = self._circular_mean_deg(angles)
+
 
             # 🔥 wall 방향 판별
-            orientation = None
-            if det["class"] == "wall":
-                if widths.mean() > heights.mean():
-                    orientation = "horizontal"
-                else:
-                    orientation = "vertical"
+            # orientation = None
+            # if det["class"] == "wall":
+            #     if widths.mean() > heights.mean():
+            #         orientation = "horizontal"
+            #     else:
+            #         orientation = "vertical"
+            if abs(mean_angle) < angle_th:
+                orientation = "horizontal"
+                grasp_angle = 0.0
+            elif abs(abs(mean_angle) - 90.0) < angle_th:
+                orientation = "vertical"
+                grasp_angle = 90.0
+            else:
+                orientation = "misaligned"
+                grasp_angle = mean_angle  
 
             fused.append({
                 "class": det["class"],
@@ -102,6 +122,7 @@ class YoloModel:
                 "score": scores.mean(),
                 "count": len(group),
                 "orientation": orientation,
+                "angle": grasp_angle
             })
 
         return fused
@@ -116,3 +137,21 @@ class YoloModel:
                 frames.append(frame)
             time.sleep(0.01)
         return frames
+
+    def _normalize_angle(self, rect):
+        """
+        OpenCV minAreaRect angle normalize
+        return: -90 ~ +90 (wall direction)
+        """
+        (_, _), (w, h), angle = rect
+        if w < h:
+            angle += 90.0
+        return angle
+
+    def _circular_mean_deg(self, angles):
+        """
+        평균 각도 (degree)
+        """
+        rad = np.deg2rad(angles)
+        mean_rad = np.arctan2(np.mean(np.sin(rad)), np.mean(np.cos(rad)))
+        return np.rad2deg(mean_rad)
