@@ -33,8 +33,8 @@ class Pawn(Drawable):
                  border_color=cfg.PAWN_BORDER_COL,
                  coord=None,
                  walls=cfg.NUM_WALLS,
-                 width=cfg.CELL_WIDTH - cfg.CELL_PAD,
-                 height=cfg.CELL_HEIGHT - cfg.CELL_PAD,  # Set to True so the computer moves this pawn
+                 width=cfg.PAWN_WIDTH,
+                 height=cfg.PAWN_HEIGHT,  # Set to True so the computer moves this pawn
                  url=None  # Set
                  ):
         super().__init__(screen, color, border_color)
@@ -115,9 +115,19 @@ class Pawn(Drawable):
         pygame.draw.ellipse(self.board.screen, self.color, r, 0)
         pygame.draw.ellipse(self.board.screen, self.border_color, r, 2)
 
+    # @property
+    # def rect(self):
+    #     return self.board.get_cell(self.coord).rect
+
     @property
     def rect(self):
-        return self.board.get_cell(self.coord).rect
+        cell_rect = self.board.get_cell(self.coord).rect
+
+        x = cell_rect.x + (cell_rect.width - self.width) // 2
+        y = cell_rect.y + (cell_rect.height - self.height) // 2
+
+        return pygame.Rect(x, y, self.width, self.height)
+
 
     def can_go(self, direction: int) -> List[Coord]:
         """ Direction is one of 'N', 'S', 'E', 'W'

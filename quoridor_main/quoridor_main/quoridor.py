@@ -40,6 +40,8 @@ def dispatch(events, board: Board):
 def main() -> int:
     core.init()
 
+    # 인자 설정 -> 필요 없음
+    ##############################
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--level",
                         help="AI player Level. Default is 0 (Easy). Higher is harder)",
@@ -55,6 +57,7 @@ def main() -> int:
     cfg.LEVEL = options.level
     cfg.__DEBUG__ = options.debug
     cfg.CACHE_ENABLED = options.cache
+    ##############################
 
     log('Quoridor AI game, (C) 2009 by Jose Rodriguez (a.k.a. Boriel)')
     log('This program is Free')
@@ -80,6 +83,7 @@ def main() -> int:
             log('Could not create cache directory {}. Caching disabled'.format(cfg.CACHE_DIR), LogLevel.ERROR)
             cfg.CACHE_ENABLED = False
 
+    # 아마 AI 돌리는 내용?
     cont = True
     while cont:
         clock.tick(cfg.FRAMERATE)
