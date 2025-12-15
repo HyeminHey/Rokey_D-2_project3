@@ -410,7 +410,7 @@ class GameOrchestratorNode(Node):
             pos_obj_pre[2] += 40
             motion = {
                 'sequence': [
-                    {'primitive': 'operate_gripper', 'width': 300},
+                    {'primitive': 'operate_gripper', 'width': 350},
                     {'primitive': 'move_pose', 'pose': pick_pose},
                     {'primitive': 'move_pose', 'pose': pos_obj_pre},
                     {'primitive': 'move_pose', 'pose': pos_obj},
@@ -418,7 +418,7 @@ class GameOrchestratorNode(Node):
                     {'primitive': 'move_pose', 'pose': pos_obj_pre},
                     {'primitive': 'move_pose', 'pose': pos_pre},
                     {'primitive': 'force_control'},
-                    {'primitive': 'operate_gripper', 'width': 300},
+                    {'primitive': 'operate_gripper', 'width': 350},
                     {'primitive': 'move_pose', 'pose': pos_pre},
                     {'primitive': 'move_pose', 'pose': pick_pose}
                 ]
@@ -436,7 +436,7 @@ class GameOrchestratorNode(Node):
             pos_obj_pre[2] += 40
             motion = {
                 'sequence': [
-                    {'primitive': 'operate_gripper', 'width': 200},
+                    {'primitive': 'operate_gripper', 'width': 250},
                     {'primitive': 'move_pose', 'pose': pick_pose},
                     {'primitive': 'move_pose', 'pose': pos_obj_pre},
                     {'primitive': 'move_pose', 'pose': pos_obj},
@@ -444,7 +444,7 @@ class GameOrchestratorNode(Node):
                     {'primitive': 'move_pose', 'pose': pos_obj_pre},
                     {'primitive': 'move_pose', 'pose': pos_pre},
                     {'primitive': 'force_control'},
-                    {'primitive': 'operate_gripper', 'width': 200},
+                    {'primitive': 'operate_gripper', 'width': 250},
                     {'primitive': 'move_pose', 'pose': pos_pre},
                     {'primitive': 'move_pose', 'pose': pick_pose}
                 ]
