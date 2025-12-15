@@ -93,10 +93,10 @@ class Board(Drawable):
         pygame.draw.rect(self.screen, cfg.FONT_BG_COLOR, level_erase_rect, 0)
         self.msg(600, 760, f"LEVEL : {cfg.LEVEL + 1}", fsize=cfg.RULE_SIZE)
 
-        # State Box
-        state_rect = pygame.Rect(600, 600, 560, 130)
-        pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
-        self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+        # # State Box
+        # state_rect = pygame.Rect(600, 600, 560, 130)
+        # pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+        # self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
 
     def regenerate_board(self, c_color, cb_color, c_width=cfg.CELL_WIDTH, c_height=cfg.CELL_HEIGHT):
         """ Regenerate board colors and get_cell positions.
@@ -573,10 +573,10 @@ class Board(Drawable):
                 break
 
             self.next_player()
-            # State Box
-            state_rect = pygame.Rect(600, 600, 560, 130)
-            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
-            self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+            # # State Box
+            # state_rect = pygame.Rect(600, 600, 560, 130)
+            # pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            # self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
 
         self.draw()
         self.draw_players_info()

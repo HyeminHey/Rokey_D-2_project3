@@ -58,12 +58,12 @@ class BoardRosNode(Node):
         self.get_logger().info("Level Subscriber Node is Running. Waiting for /game_level messages...")
 
         self.setting_sub = self.create_subscription(
-                    Int32,
-                    '/game_reset',
-                    self.setting_listener_callback,
+                    String,
+                    '/now_game_state',
+                    self.state_listener_callback,
                     10)
         self.setting_sub
-        self.get_logger().info("Setting Subscriber Node is Running. Waiting for /game_reset messages...")
+        self.get_logger().info("Setting Subscriber Node is Running. Waiting for /clean_up messages...")
 
 
         self.pub = self.create_publisher(String, '/game_finished', 10)
@@ -97,21 +97,80 @@ class BoardRosNode(Node):
         log(f"level = {cfg.LEVEL}")
         self.board.reset_AI()
 
-    def setting_listener_callback(self, msg):
-        set_mode = msg.data
-        if type(set_mode) == int:
-            if set_mode == 1: # 정리 시작 (정리 모드 on)
-                # State Box
-                state_rect = pygame.Rect(600, 600, 560, 130)
-                pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
-                # self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
-                self.board.msg(625, 642, "Resetting the Board...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
-            elif set_mode == 0:
-                self.reset_game()            
+
+    # # 나중에 "CLEAN_UP"일 때 심으면 될 듯
+    # def cleanup_listener_callback(self, msg):
+    #     set_mode = msg.data
+    #     if type(set_mode) == int:
+    #         if set_mode == 1: # 정리 시작 (정리 모드 on)
+    #             # State Box
+    #             state_rect = pygame.Rect(600, 600, 560, 130)
+    #             pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+    #             # self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+    #             self.board.msg(625, 642, "Resetting the Board...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
+    #         elif set_mode == 0:
+    #             self.reset_game()            
     
+    def state_listener_callback(self, msg):
+        self.now_state = str(msg.data)
+
+        if self.now_state == "WAIT_WAKE":
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(650, 635, "Say \"Hey, Quori\"", fsize=cfg.STATE_BOX_FONT_SIZE - 20)
+        
+        elif self.now_state == "WAIT_START":
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(650, 635, "Say \"Start Game\"", fsize=cfg.STATE_BOX_FONT_SIZE - 20)        
+        
+        elif self.now_state == "HUMAN_TURN":
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(650, 620, "Now Detecting...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
+            self.board.msg(850, 675, "Don't Touch!", fsize=cfg.STATE_BOX_FONT_SIZE - 40)
+            pygame.display.flip()     
+
+            # wait for 10sec
+            clock = pygame.time.Clock()
+            start_time = pygame.time.get_ticks()
+
+            waiting = True
+            while waiting:
+                clock.tick(60)  # FPS 유지
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+
+                if pygame.time.get_ticks() - start_time >= 3000:
+                    waiting = False
+            # pygame.time.wait(3000)  # 3초 대기
+            
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+
+        elif self.now_state == "ROBOT_THINK":
+            pass
+        
+        elif self.now_state == "ROBOT_PLAN":
+            pass
+        
+        elif self.now_state == "ROBOT_EXECUTE":
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(680, 640, "Now Moving...", fsize=cfg.STATE_BOX_FONT_SIZE - 15)
+        
+
+
     def board_state_callback(self, request:AiCompute, response):
-        if type(self.board.won_player) == int:
-            self.reset_game()
         # self.get_logger().info(f"type(self.board) = {type(self.board)}")
 
         # self.get_logger().info("Received AiCompute request")

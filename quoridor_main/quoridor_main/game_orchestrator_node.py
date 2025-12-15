@@ -56,6 +56,7 @@ class GameOrchestratorNode(Node):
 
         # ---------- Pub ----------
         self.difficulty_pub = self.create_publisher(Int32, "/game_level", 10)
+        self.state_pub = self.create_publisher(String, '/now_game_state', 10)
 
         # ---------- Sub ----------
 
@@ -123,6 +124,9 @@ class GameOrchestratorNode(Node):
         try:
             # ---------------- WAIT_WAKE ----------------
             if self.state == OrchestratorState.WAIT_WAKE:
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
 
                 if self.wake_future is None:
                     self.log("Say '헤이 쿼리' to begin.")
@@ -141,6 +145,9 @@ class GameOrchestratorNode(Node):
 
             # ---------------- WAIT_START ----------------
             elif self.state == OrchestratorState.WAIT_START:
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
 
                 if self.speech_future is None:
                     self.log("Say 'start game' to begin.")
@@ -168,7 +175,10 @@ class GameOrchestratorNode(Node):
             # ---------------- HUMAN_TURN ----------------
 # ---------------- HUMAN_TURN ----------------
             elif self.state == OrchestratorState.HUMAN_TURN:
-
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
+                
                 # --- Step 1: Human Turn 진입 시 한 번 실행 ---
                 if not self._human_turn_initialized:
                     self._human_turn_initialized = True
@@ -262,6 +272,9 @@ class GameOrchestratorNode(Node):
 
             # ---------------- ROBOT_THINK ----------------
             elif self.state == OrchestratorState.ROBOT_THINK:
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
 
                 if self.ai_future is None:
                     if self.ai_client.wait_for_service(timeout_sec=0.0):
@@ -278,11 +291,18 @@ class GameOrchestratorNode(Node):
 
             # ---------------- ROBOT_PLAN ----------------
             elif self.state == OrchestratorState.ROBOT_PLAN:
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
+
                 self.robot_motion = self.plan_motion(self.robot_cmd)
                 self.state = OrchestratorState.ROBOT_EXECUTE
 
             # ---------------- ROBOT_EXECUTE ----------------
             elif self.state == OrchestratorState.ROBOT_EXECUTE:
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
 
                 if self.motion_goal_future is None:
                     goal = self.build_motion_goal(self.robot_motion)
