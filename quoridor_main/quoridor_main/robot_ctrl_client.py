@@ -34,7 +34,8 @@ class MotionRequestServer(Node):
         # Example Motion Dict
         test_motion = {'sequence': [
             {'primitive': 'operate_gripper', 'width': 300}, 
-            {'primitive': 'move_pose', 'pose': [367.438, 7.224, 194.564, 68.625, 179.97, 68.493]},
+            {'primitive': 'move_pose', 'pose': [457.494, 7.422, 194.304, 132.373, 179.965, 132.209]},
+            # {'primitive': 'move_pose', 'pose': [160.018, 7.227, 347.286, 0.043, 150.865, 89.941]},
             # {'primitive': 'move_pose', 'pose': [267.358, 7.489, 194.298, 131.655, 179.966, -138.5]}, 
             # {'primitive': 'move_pose', 'pose': [308.14285714285717, 12.5, 70.0, 131.655, 179.966, -138.5]},
             # {'primitive': 'move_pose', 'pose': [308.14285714285717, 12.5, 40.0, 131.655, 179.966, -138.5]}, 
