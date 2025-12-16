@@ -135,45 +135,45 @@ class ObjectDetectionNode(Node):
             self.misaligned_walls,
         )
 
-        # # 실제코드
-        # if self.now_state == "HUMAN_TURN":
-        #     # 🔥 Int32Row[] 로 변환
-        #     response.board_state = []
-        #     for item in board_array:
-        #         row = Int32Row()
-        #         row.data = item   # [type, r, c]
-        #         response.board_state.append(row)
+        # 실제코드
+        if self.now_state == "HUMAN_TURN":
+            # 🔥 Int32Row[] 로 변환
+            response.board_state = []
+            for item in board_array:
+                row = Int32Row()
+                row.data = item   # [type, r, c]
+                response.board_state.append(row)
 
-        #     self.get_logger().info(
-        #         f"📤 Vision response: {[r.data for r in response.board_state]}"
-        #     )
+            self.get_logger().info(
+                f"📤 Vision response: {[r.data for r in response.board_state]}"
+            )
 
-        # elif self.now_state == "CLEAN_UP":
-        #     # 🔥 Int32Row[] 로 변환
-        #     response.board_state = []
-        #     for item in clean_board_array:
-        #         row = Int32Row()
-        #         row.data = item   # [type, r, c]
-        #         response.board_state.append(row)
+        elif self.now_state == "CLEAN_UP":
+            # 🔥 Int32Row[] 로 변환
+            response.board_state = []
+            for item in clean_board_array:
+                row = Int32Row()
+                row.data = item   # [type, r, c]
+                response.board_state.append(row)
 
-        #     self.get_logger().info(
-        #         f"📤 Vision response: {[r.data for r in response.board_state]}"
-        #     )
-        # return response
-
-
-        #테스트용
-        # 🔥 Int32Row[] 로 변환
-        response.board_state = []
-        for item in clean_board_array:
-            row = Int32Row()
-            row.data = item   # [type, r, c]
-            response.board_state.append(row)
-
-        self.get_logger().info(
-            f"📤 Vision response: {[r.data for r in response.board_state]}"
-        )
+            self.get_logger().info(
+                f"📤 Vision response: {[r.data for r in response.board_state]}"
+            )
         return response
+
+
+        # #테스트용
+        # # 🔥 Int32Row[] 로 변환
+        # response.board_state = []
+        # for item in clean_board_array:
+        #     row = Int32Row()
+        #     row.data = item   # [type, r, c]
+        #     response.board_state.append(row)
+
+        # self.get_logger().info(
+        #     f"📤 Vision response: {[r.data for r in response.board_state]}"
+        # )
+        # return response
 
 
     def process_scene(self):
@@ -224,13 +224,13 @@ class ObjectDetectionNode(Node):
 
     def _camera_to_base(self, camera_coords):
         # detection.py 기준 경로
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # current_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # quoridor_main/detect_board → quoridor_main → resource
-        resource_path = os.path.abspath(
-            os.path.join(current_dir, "..", "..", "resource")
-        )
-
+        # # quoridor_main/detect_board → quoridor_main → resource
+        # resource_path = os.path.abspath(
+        #     os.path.join(current_dir, "..", "..", "resource")
+        # )
+        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
         gripper2cam = np.load(
             os.path.join(resource_path, "T_gripper2camera.npy")
         )

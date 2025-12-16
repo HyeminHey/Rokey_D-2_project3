@@ -9,10 +9,11 @@ from ultralytics import YOLO
 
 class YoloModel:
     def __init__(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        # detect_board → quoridor_main → src/quoridor_main
-        package_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
-        resource_path = os.path.join(package_dir, "resource")
+        # base_dir = os.path.dirname(os.path.abspath(__file__))
+        # # detect_board → quoridor_main → src/quoridor_main
+        # package_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
+        # resource_path = os.path.join(package_dir, "resource")
+        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
 
         model_path = os.path.join(resource_path, "quoridor_final.pt")
         json_path = os.path.join(resource_path, "class_name_tool.json")
