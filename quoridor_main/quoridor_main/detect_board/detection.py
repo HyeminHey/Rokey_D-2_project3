@@ -107,6 +107,7 @@ class ObjectDetectionNode(Node):
     def handle_get_board_state(self, request, response):
         self.get_logger().info("📸 Vision request received")
         self.now_state = request.now_state
+        self.get_logger().info(f"now_state = {self.now_state}")
 
         # 이전 결과 초기화
         self.red_pawns = []
