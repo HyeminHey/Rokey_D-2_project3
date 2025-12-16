@@ -5,10 +5,9 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer
 import DR_init
-from robot_control.onrobot import RG
+from quoridor_main.detect_board.onrobot import RG
 
 from qulido_robot_msgs.action import ExecuteMotion
-from qulido_robot_msgs.msg import MotionPrimitive
 
 import sys
 

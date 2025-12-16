@@ -108,17 +108,8 @@ class GameOrchestratorNode(Node):
         self._awaiting_final_state = False    # end turn 후 vision 대기용
         self.wall_used=0
 
-        # self.camera_pose = [-30.438, -46.239, 96.574, 14.625, 103.517, 66.352] # joint
         self.camera_pose = [-29.062, -49.05, 96.263, 13.934, 106.247, 68.124] # joint
         self.pose_home = [0.0, 0.0, 90.0, 0.0, 90.0, 0.0] # joint
-        # self.wall_pose = [
-        #     [257.072, -137.373, 54.029, 147.491, 179.923, -122.683],
-        #     [257.066, -77.279, 54.043, 146.731, 179.926, -123.454],
-        #     [256.932, -16.599, 53.945, 151.618, 179.911, -118.519],
-        #     [256.998, 42.637, 53.959, 150.961, 179.912, -119.197],
-        #     [257.055, 102.752, 53.982, 149.117, 179.914, -121.052],
-        #     [257.449, 160.218, 54.289, 114.474, 179.924, -155.735]
-        # ] # task
         self.wall_pose = [
             [233.034, -137.454, 54.061, 148.394, 179.928, -121.78],
             [232.998, -77.359, 54.039, 148.814, 179.924, -121.369],
@@ -295,7 +286,7 @@ class GameOrchestratorNode(Node):
                 # ---------- 1. 사람이 아무 것도 안 둠 ----------
                 if not self.added:
                     self.log(
-                        "❌ No human move detected → back to HUMAN_TURN, replace your pawn or wall"
+                        "❌ No human move detected → back to HUMAN_TURN, Replace your pawn or wall"
                     )
                     self.state = OrchestratorState.HUMAN_TURN
                     return

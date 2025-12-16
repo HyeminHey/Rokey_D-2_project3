@@ -10,7 +10,7 @@ from ultralytics import YOLO
 class YoloModel:
     def __init__(self):
         resource_path = "/home/rokey/quoridor_ws/src/quoridor_main/resource"
-        model_path = os.path.join(resource_path, "quoridor_seg.pt")
+        model_path = os.path.join(resource_path, "quoridor_final.pt")
         json_path = os.path.join(resource_path, "class_name_tool.json")
 
         self.model = YOLO(model_path)
