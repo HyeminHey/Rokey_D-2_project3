@@ -180,7 +180,6 @@ class CleanUpNode(Node):
             for cmd in self.board_state:
                 motion_seq = self.create_motion_sequence(cmd)
                 self.seq_list.append(motion_seq)
-                self.sorted_walls += 1
 
 
         if self.seq_list and not self._clean_up_started:
@@ -332,6 +331,7 @@ class CleanUpNode(Node):
                         {'primitive': 'movej_pose', 'pose': pick_pose}
                     ]
                 }
+                self.sorted_walls += 1
                 
             print(motion)
 
