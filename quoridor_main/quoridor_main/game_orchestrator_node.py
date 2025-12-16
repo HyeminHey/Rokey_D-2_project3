@@ -543,8 +543,8 @@ class GameOrchestratorNode(Node):
             rz += 90
 
         return list(map(float, [x, y, z, rx, ry, rz]))
-
-
+    
+    
 # ===================== MAIN =====================
 def main(args=None):
     rclpy.init(args=args)
