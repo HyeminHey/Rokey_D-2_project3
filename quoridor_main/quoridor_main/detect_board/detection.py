@@ -9,8 +9,6 @@ from qulido_robot_msgs.srv import GetBoardState
 from qulido_robot_msgs.msg import Int32Row
 import DR_init
 import sys, os
-from quoridor_main.game_orchestrator_node import OrchestratorState
-from quoridor_main.game_orchestrator_node import GameOrchestratorNode
 
 # for single robot
 ROBOT_ID = "dsr01"
@@ -94,6 +92,9 @@ class ObjectDetectionNode(Node):
             self.img_node.get_camera_intrinsic, "camera intrinsics"
         )
 
+        self.now_state = None
+
+
         # 🔥 결과 저장용
         self.vision_srv = self.create_service(
             GetBoardState,
@@ -105,6 +106,7 @@ class ObjectDetectionNode(Node):
 
     def handle_get_board_state(self, request, response):
         self.get_logger().info("📸 Vision request received")
+        self.now_state = request.now_state
 
         # 이전 결과 초기화
         self.red_pawns = []
@@ -132,8 +134,8 @@ class ObjectDetectionNode(Node):
             self.misaligned_walls,
         )
 
-        # 실제코드
-        # if GameOrchestratorNode.state == OrchestratorState.HUMAN_TURN:
+        # # 실제코드
+        # if self.now_state == "HUMAN_TURN":
         #     # 🔥 Int32Row[] 로 변환
         #     response.board_state = []
         #     for item in board_array:
@@ -145,7 +147,7 @@ class ObjectDetectionNode(Node):
         #         f"📤 Vision response: {[r.data for r in response.board_state]}"
         #     )
 
-        # elif GameOrchestratorNode.state == OrchestratorState.CLEAN_UP:
+        # elif self.now_state == "CLEAN_UP":
         #     # 🔥 Int32Row[] 로 변환
         #     response.board_state = []
         #     for item in clean_board_array:
@@ -220,7 +222,14 @@ class ObjectDetectionNode(Node):
 
 
     def _camera_to_base(self, camera_coords):
-        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
+        # detection.py 기준 경로
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # quoridor_main/detect_board → quoridor_main → resource
+        resource_path = os.path.abspath(
+            os.path.join(current_dir, "..", "..", "resource")
+        )
+
         gripper2cam = np.load(
             os.path.join(resource_path, "T_gripper2camera.npy")
         )

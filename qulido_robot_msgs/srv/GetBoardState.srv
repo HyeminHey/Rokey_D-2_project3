@@ -1,3 +1,4 @@
+string now_state
 ---
 qulido_robot_msgs/Int32Row[] board_state
 

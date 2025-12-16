@@ -4,7 +4,7 @@
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Trigger
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from rclpy.action import ActionClient
 
 from qulido_robot_msgs.srv import GetBoardState
@@ -25,7 +25,7 @@ class CleanUpNode(Node):
 
         # ---------- Service Server ----------
         self.srv = self.create_service(
-            Trigger,
+            CleanUpTrigger,
             '/clean_up',
             self.on_cleanup_request
         )
@@ -33,6 +33,9 @@ class CleanUpNode(Node):
         # ---------- Clients ----------
         self.vision_client = self.create_client(GetBoardState, "/vision/get_board_state")
         self.motion_client = ActionClient(self, ExecuteMotion, "/execute_motion")
+
+        # -----------Publisher---------
+        self.end_pub = self.create_publisher(Bool, '/clean_up_finished', 10)
 
         # ---------- State ----------
         self._active = False
@@ -103,18 +106,18 @@ class CleanUpNode(Node):
             response.success = False
             response.message = "Cleanup already running"
             return response
+        
+        self.wall_used = request.wall_used
 
+        self.log(f"request received. wall_used = {self.wall_used}")
         self._active = True
         self._response = response
         self._clean_up_initialized = False
         self.motion_goal_future = None
         self.motion_result_future = None
         self.vision_future = None
-        self.log(f"initialized = {self._clean_up_initialized}")
         self.main_timer = self.create_timer(0.1, self.plan_clean_up_motion)
-        response.message = "after"
         response.success = True
-        self.log("response ture, before return")
         return response
 
     # ==================================================
@@ -140,11 +143,10 @@ class CleanUpNode(Node):
             goal_handle = self.motion_goal_future.result()  # ClientGoalHandle
             self.motion_goal_future = None
 
-            # # 예외처리
-            # if not goal_handle.accepted:
-            #     self.log("Motion goal rejected → ERROR")
-            #     self.state = OrchestratorState.ERROR
-            #     return
+            # 예외처리
+            if not goal_handle.accepted:
+                self.log("Motion goal rejected → ERROR")
+                return
 
             self.motion_result_future = goal_handle.get_result_async()
             return
@@ -158,12 +160,12 @@ class CleanUpNode(Node):
                 self.log("Arrived at camera pose → requesting board state")
                 # Vision 호출
                 if self.vision_client.wait_for_service(timeout_sec=0.0):
-                    self.vision_future = self.vision_client.call_async(GetBoardState.Request())
+                    req = GetBoardState.Request()
+                    req.now_state = "CLEAN_UP"
+                    self.vision_future = self.vision_client.call_async(req)
             else:
-                # # 예외처리
-                # self.log("Motion failed → ERROR")
-                # self.state = OrchestratorState.ERROR
-                pass
+                # 예외처리
+                self.log("Motion failed → ERROR")
             return
 
         # --- Step 4: Vision 결과 처리 ---
@@ -239,13 +241,17 @@ class CleanUpNode(Node):
                 self.log("하나 정리 끝")
                 if self.now_obj == self.obj_cnt - 1:
                     self.log(f"End Cleaning")
+
+                    msg = Bool()
+                    msg.data = True
+                    self.end_pub.publish(msg)
+
                     self.seq_list = []
                     self._clean_up_started = False
                     self._active = False
                     if self.robot_timer:
                         self.robot_timer.cancel()
                         self.robot_timer = None
-                    # self.main_timer = self.create_timer(0.1, self.plan_clean_up_motion)
                     return
                 self.now_obj += 1
 
@@ -363,9 +369,6 @@ class CleanUpNode(Node):
                 rz -= 360.0
             elif rz < -180.0:
                 rz += 360.0
-
-        # else:
-        #     raise ValueError(f"Unknown wall orientation: {orientation}")
 
         return list(map(float, [x, y, z, rx, ry, rz]))
 

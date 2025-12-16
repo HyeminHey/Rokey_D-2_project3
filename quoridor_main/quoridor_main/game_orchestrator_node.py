@@ -231,7 +231,9 @@ class GameOrchestratorNode(Node):
                         self.log("Arrived at camera pose → requesting board state")
                         # Vision 호출
                         if self.vision_client.wait_for_service(timeout_sec=0.0):
-                            self.vision_future = self.vision_client.call_async(GetBoardState.Request())
+                            req = GetBoardState.Request()
+                            req.now_state = "HUMAN_TURN"
+                            self.vision_future = self.vision_client.call_async(req)
                     else:
                         self.log("Motion failed → ERROR")
                         self.state = OrchestratorState.ERROR
@@ -266,7 +268,10 @@ class GameOrchestratorNode(Node):
                             self.log("Human ended turn → fetching final game state")
                             # Vision 다시 호출
                             if self.vision_client.wait_for_service(timeout_sec=0.0):
-                                self.vision_future = self.vision_client.call_async(GetBoardState.Request())
+                                req = GetBoardState.Request()
+                                req.now_state = "HUMAN_TURN"
+                                self.vision_future = self.vision_client.call_async(req)
+
                             self._awaiting_final_state = True
                             return
 
