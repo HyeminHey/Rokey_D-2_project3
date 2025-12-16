@@ -104,6 +104,9 @@ class CleanUpNode(Node):
         self.vision_future = None
         self.log(f"initialized = {self._clean_up_initialized}")
         self.main_timer = self.create_timer(0.1, self.plan_clean_up_motion)
+        response.message = "after"
+        response.success = True
+        self.log("response ture, before return")
         return response
 
     # ==================================================
