@@ -285,92 +285,94 @@ class CleanUpNode(Node):
                 self.now_obj += 1
 
     def create_motion_sequence(self, cmd):            
-            obj = cmd[0]
-            # 출발지cell
-            pos_b = cmd[1:]
+        obj = cmd[0]
+        # 출발지cell
+        pos_b = cmd[1:]
 
-            # print(cmd)
+        # print(cmd)
 
-            if abs(obj)==1: # AI/Player pawn
-                # 출발지cell(아래)
-                pos_orig = self.set_pawn_pose(*pos_b)
-                # 목적지
-                if obj == -1:
-                    pos_dst = self.set_pawn_pose(self.AI_pawn_init_pose[0], self.AI_pawn_init_pose[1])
-                elif obj == 1: 
-                    pos_dst = self.set_pawn_pose(self.player_pawn_init_pose[0], self.player_pawn_init_pose[1])
-                # 출발지cell (위)
-                pos_orig_up = pos_orig.copy()
-                pos_orig_up[2] += 60
-                pos_dst_up = pos_dst.copy()
-                pos_dst_up[2] += 60
-                pos_dst[2] += 10
-                motion = {
-                    'sequence': [
-                        {'primitive': 'operate_gripper', 'width': 450},
-                        {'primitive': 'movej_pose', 'pose': pick_pose},
-                        {'primitive': 'movel_pose', 'pose': pos_orig_up},
-                        {'primitive': 'movel_pose', 'pose': pos_orig},
-                        {'primitive': 'operate_gripper', 'width':350},
-                        {'primitive': 'movel_pose', 'pose': pos_orig_up},
-                        {'primitive': 'movel_pose', 'pose': pos_dst_up},
-                        {'primitive': 'movel_pose', 'pose': pos_dst},
-                        {'primitive': 'force_control'},
-                        {'primitive': 'operate_gripper', 'width': 450},
-                        {'primitive': 'movel_pose', 'pose': pos_dst_up},
-                        {'primitive': 'movej_pose', 'pose': pick_pose}
-                    ]
-                }
-            # elif abs(obj)==2: # vertical, horizontal walls
-            else: # Walls 3types
-                # 출발지 아래
-                if obj == -2:
-                    pos_orig = self.set_wall_pose(*pos_b, "horizontal")
-                elif obj == 2:
-                    pos_orig = self.set_wall_pose(*pos_b, "vertical")
-                elif obj == 3:
-                    if len(pos_b) < 3:
-                        print("error")
-                        return
-                    angle = pos_b[2]
-                    pos_b_xy = pos_b[:2]
-                    pos_orig = self.set_wall_pose(*pos_b_xy, "misaligned", angle)
-                
-                self.get_logger().info(f"sorted={self.sorted_walls}, used={self.wall_used}")
-                if self.sorted_walls < self.wall_used:
-                    self.get_logger().info(f"ai wall = ({self.AI_wall_init_pose[self.sorted_walls][0]},{self.AI_wall_init_pose[self.sorted_walls][1]}")
-                    pos_dst = self.set_wall_pose(self.AI_wall_init_pose[self.sorted_walls][0], self.AI_wall_init_pose[self.sorted_walls][1], "vertical")
-                elif self.sorted_walls >= self.wall_used:
-                    self.get_logger().info(f"player wall = ({self.player_wall_init_pose[self.sorted_walls - self.wall_used][0]},{self.player_wall_init_pose[self.sorted_walls - self.wall_used][1]}")
-                    pos_dst = self.set_wall_pose(self.player_wall_init_pose[self.sorted_walls - self.wall_used][0], self.player_wall_init_pose[self.sorted_walls - self.wall_used][1], "horizontal")
-                # 출발지cell (위)
-                pos_orig_up = pos_orig.copy()
-                pos_orig_up[2] += 60
-                pos_dst_up = pos_dst.copy()
-                pos_dst_up[2] += 60
-                pos_dst[2] += 10
-                motion = {
-                    'sequence': [
-                        {'primitive': 'operate_gripper', 'width': 350},
-                        {'primitive': 'movej_pose', 'pose': pick_pose},
-                        {'primitive': 'movel_pose', 'pose': pos_orig_up},
-                        {'primitive': 'movel_pose', 'pose': pos_orig},
-                        {'primitive': 'operate_gripper', 'width':250},
-                        {'primitive': 'movel_pose', 'pose': pos_orig_up},
-                        {'primitive': 'movel_pose', 'pose': pos_dst_up},
-                        {'primitive': 'movel_pose', 'pose': pos_dst},
-                        {'primitive': 'force_control'},
-                        {'primitive': 'operate_gripper', 'width': 350},
-                        {'primitive': 'movel_pose', 'pose': pos_dst_up},
-                        {'primitive': 'movej_pose', 'pose': pick_pose}
-                    ]
-                }
-                self.sorted_walls += 1
-                self.get_logger().info(f"sorted walls = {self.sorted_walls}")
-                
-            # print(motion)
+        if abs(obj)==1: # AI/Player pawn
+            # 출발지cell(아래)
+            pos_orig = self.set_pawn_pose(*pos_b)
+            # 목적지
+            if obj == -1:
+                pos_dst = self.set_pawn_pose(self.AI_pawn_init_pose[0], self.AI_pawn_init_pose[1])
+            elif obj == 1: 
+                pos_dst = self.set_pawn_pose(self.player_pawn_init_pose[0], self.player_pawn_init_pose[1])
+            # 출발지cell (위)
+            pos_orig_up = pos_orig.copy()
+            pos_orig_up[2] += 60
+            pos_dst_up = pos_dst.copy()
+            pos_dst_up[2] += 60
+            pos_dst[2] += 10
+            motion = {
+                'sequence': [
+                    {'primitive': 'operate_gripper', 'width': 550},
+                    {'primitive': 'movej_pose', 'pose': pick_pose},
+                    {'primitive': 'movel_pose', 'pose': pos_orig_up},
+                    {'primitive': 'movel_pose', 'pose': pos_orig},
+                    {'primitive': 'operate_gripper', 'width':350},
+                    {'primitive': 'movel_pose', 'pose': pos_orig_up},
+                    {'primitive': 'movel_pose', 'pose': pos_dst_up},
+                    {'primitive': 'movel_pose', 'pose': pos_dst},
+                    {'primitive': 'force_control'},
+                    {'primitive': 'operate_gripper', 'width': 550},
+                    {'primitive': 'movel_pose', 'pose': pos_dst_up},
+                    {'primitive': 'movej_pose', 'pose': pick_pose}
+                ]
+            }
+        # elif abs(obj)==2: # vertical, horizontal walls
+        else: # Walls 3types
+            # 출발지 아래
+            if obj == -2:
+                pos_orig = self.set_wall_pose(*pos_b, "horizontal")
+            elif obj == 2:
+                pos_orig = self.set_wall_pose(*pos_b, "vertical")
+            elif obj == 3:
+                if len(pos_b) < 3:
+                    print("error")
+                    return
+                angle = pos_b[2]
+                pos_b_xy = pos_b[:2]
+                pos_orig = self.set_wall_pose(*pos_b_xy, "misaligned", angle)
+            
+            self.get_logger().info(f"sorted={self.sorted_walls}, used={self.wall_used}")
+            if self.sorted_walls < self.wall_used:
+                self.get_logger().info(f"ai wall = ({self.AI_wall_init_pose[self.sorted_walls][0]},{self.AI_wall_init_pose[self.sorted_walls][1]}")
+                pos_dst = self.set_wall_pose(self.AI_wall_init_pose[self.sorted_walls][0], self.AI_wall_init_pose[self.sorted_walls][1], "vertical")
+            elif self.sorted_walls >= self.wall_used:
+                self.get_logger().info(f"player wall = ({self.player_wall_init_pose[self.sorted_walls - self.wall_used][0]},{self.player_wall_init_pose[self.sorted_walls - self.wall_used][1]}")
+                pos_dst = self.set_wall_pose(self.player_wall_init_pose[self.sorted_walls - self.wall_used][0], self.player_wall_init_pose[self.sorted_walls - self.wall_used][1], "horizontal")
+            # 출발지cell (위)
+            pos_orig_up = pos_orig.copy()
+            pos_orig_up[2] += 60
+            pos_dst_up = pos_dst.copy()
+            pos_dst_up[2] += 60
+            pos_dst[2] += 10
+            motion = {
+                'sequence': [
+                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'movej_pose', 'pose': pick_pose},
+                    {'primitive': 'movel_pose', 'pose': pos_orig_up},
+                    {'primitive': 'movel_pose', 'pose': pos_orig},
+                    {'primitive': 'operate_gripper', 'width':250},
+                    {'primitive': 'movel_pose', 'pose': pos_orig_up},
+                    {'primitive': 'movel_pose', 'pose': pos_dst_up},
+                    {'primitive': 'movel_pose', 'pose': pos_dst},
+                    {'primitive': 'force_control'},
+                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'movel_pose', 'pose': pos_dst_up},
+                    {'primitive': 'movej_pose', 'pose': pick_pose}
+                ]
+            }
+            self.sorted_walls += 1
+            self.get_logger().info(f"sorted walls = {self.sorted_walls}")
+            
+        self.get_logger().info(f"received pos = ({pos_b[0]}, {pos_b[1]}")
+        if len(pos_b) == 3:
+            self.get_logger().info(f"angle = {pos_b[2]}")
 
-            return motion
+        return motion
 
 
     def set_pawn_pose(self, x, y):

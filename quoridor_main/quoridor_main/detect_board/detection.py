@@ -33,6 +33,16 @@ BOARD_X_MAX = 674
 BOARD_Y_MIN = -185
 BOARD_Y_MAX = 210 # for detect
 
+# ===============================
+# Depth Median (🔥 중요)
+# ===============================
+def get_depth_median(depth, cx, cy, k=5):
+    h, w = depth.shape
+    xs = slice(max(cx - k, 0), min(cx + k, w))
+    ys = slice(max(cy - k, 0), min(cy + k, h))
+    region = depth[ys, xs]
+    valid = region[region > 0]
+    return np.median(valid) if len(valid) else 0
 
 def map_pawn_to_board(x, y):
     # 1️⃣ 보드 범위 체크 (가장 중요)
@@ -106,6 +116,14 @@ class ObjectDetectionNode(Node):
 
     def handle_get_board_state(self, request, response):
         self.get_logger().info("📸 Vision request received")
+
+        try:
+            self.get_robot_pos_safe()
+        except RuntimeError as e:
+            self.get_logger().error(f"❌ Robot pose not ready: {e}")
+            response.board_state = []
+            return response
+        
         self.now_state = request.now_state
         self.get_logger().info(f"now_state = {self.now_state}")
 
@@ -119,24 +137,15 @@ class ObjectDetectionNode(Node):
         # 인식 수행
         self.process_scene()
 
-        board_array = self.build_board_state_array(
-            self.red_pawns,
-            self.blue_pawns,
-            self.horizontal_walls,
-            self.vertical_walls
-        )
-
-        # cleanup용 board array 생성
-        clean_board_array = self.build_clean_board_state_array(
-            self.red_pawns,
-            self.blue_pawns,
-            self.horizontal_walls,
-            self.vertical_walls,
-            self.misaligned_walls,
-        )
 
         # 실제코드
         if self.now_state == "HUMAN_TURN":
+            board_array = self.build_board_state_array(
+                self.red_pawns,
+                self.blue_pawns,
+                self.horizontal_walls,
+                self.vertical_walls
+            )
             # 🔥 Int32Row[] 로 변환
             response.board_state = []
             for item in board_array:
@@ -149,6 +158,14 @@ class ObjectDetectionNode(Node):
             )
 
         elif self.now_state == "CLEAN_UP":
+            # cleanup용 board array 생성
+            clean_board_array = self.build_clean_board_state_array(
+                self.red_pawns,
+                self.blue_pawns,
+                self.horizontal_walls,
+                self.vertical_walls,
+                self.misaligned_walls,
+            )
             # 🔥 Int32Row[] 로 변환
             response.board_state = []
             for item in clean_board_array:
@@ -160,20 +177,6 @@ class ObjectDetectionNode(Node):
                 f"📤 Vision response: {[r.data for r in response.board_state]}"
             )
         return response
-
-
-        # #테스트용
-        # # 🔥 Int32Row[] 로 변환
-        # response.board_state = []
-        # for item in clean_board_array:
-        #     row = Int32Row()
-        #     row.data = item   # [type, r, c]
-        #     response.board_state.append(row)
-
-        # self.get_logger().info(
-        #     f"📤 Vision response: {[r.data for r in response.board_state]}"
-        # )
-        # return response
 
 
     def process_scene(self):
@@ -189,7 +192,7 @@ class ObjectDetectionNode(Node):
                 continue
 
             cx, cy = map(int, det["center"])
-            z = depth[cy, cx]
+            z = get_depth_median(depth, cx, cy)
             if z <= 0:
                 continue
 
@@ -197,6 +200,7 @@ class ObjectDetectionNode(Node):
             base_xyz = self._camera_to_base(cam_xyz)
 
             cls = det["class"]
+            
 
             if cls == "red_pawn":
                 self.red_pawns.append(base_xyz)
@@ -205,14 +209,15 @@ class ObjectDetectionNode(Node):
                 self.blue_pawns.append(base_xyz)
 
             elif cls == "wall":
+                yaw = self.image_angle_to_base_yaw(det["angle"])
+
                 if det["orientation"] == "horizontal":
                     self.horizontal_walls.append(base_xyz)
                 elif det["orientation"] == "vertical":
                     self.vertical_walls.append(base_xyz)
                 elif det["orientation"] == "misaligned":
                     x, y, z = base_xyz
-                    angle = det["angle"]
-                    self.misaligned_walls.append((x, y, z, angle))
+                    self.misaligned_walls.append((x, y, z, yaw))
 
         self.get_logger().info(f"Red pawns: {self.red_pawns}")
         self.get_logger().info(f"Blue pawns: {self.blue_pawns}")
@@ -220,6 +225,27 @@ class ObjectDetectionNode(Node):
         self.get_logger().info(f"V Walls: {self.vertical_walls}")
         self.get_logger().info(f"M Walls: {self.misaligned_walls}")
 
+
+    def get_robot_pos_safe(self, retry=10):
+        for i in range(retry):
+            try:
+                pos = get_current_posx()
+            except IndexError:
+                self.get_logger().warn(
+                    f"⚠ get_current_posx() failed internally (retry {i+1}/{retry})"
+                )
+                rclpy.spin_once(dsr_node, timeout_sec=0.1)
+                continue
+
+            if pos and len(pos) > 0 and len(pos[0]) == 6:
+                return pos[0]
+
+            self.get_logger().warn(
+                f"⚠ get_current_posx returned invalid data (retry {i+1}/{retry})"
+            )
+            rclpy.spin_once(dsr_node, timeout_sec=0.1)
+
+        raise RuntimeError("❌ Failed to get robot pose after retries")
 
 
     def _camera_to_base(self, camera_coords):
@@ -235,7 +261,7 @@ class ObjectDetectionNode(Node):
             os.path.join(resource_path, "T_gripper2camera.npy")
         )
 
-        robot_pos = get_current_posx()[0]
+        robot_pos = self.get_robot_pos_safe()
         x, y, z, rx, ry, rz = robot_pos
 
         base2gripper = self.get_robot_pose_matrix(x, y, z, rx, ry, rz)
@@ -270,6 +296,20 @@ class ObjectDetectionNode(Node):
             (y - ppy) * z / fy,
             z
         )
+    
+    def image_angle_to_base_yaw(self, angle_deg):
+        theta = np.deg2rad(angle_deg)
+        R_cam = Rotation.from_euler("Z", theta).as_matrix()
+
+        x, y, z, rx, ry, rz = self.get_robot_pos_safe()
+        base2gripper = self.get_robot_pose_matrix(x, y, z, rx, ry, rz)
+
+        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
+        gripper2cam = np.load(os.path.join(resource_path, "T_gripper2camera.npy"))
+
+        R_base = base2gripper[:3, :3] @ gripper2cam[:3, :3] @ R_cam
+        return Rotation.from_matrix(R_base).as_euler("ZYX", degrees=True)[0]
+
     
     def build_board_state_array(
         self,
