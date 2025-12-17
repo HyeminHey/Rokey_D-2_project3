@@ -9,7 +9,7 @@ from ultralytics import YOLO
 
 class YoloModel:
     def __init__(self):
-        resource_path = "/home/rokey/quoridor_ws/src/quoridor_main/resource"
+        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
         model_path = os.path.join(resource_path, "quoridor_final.pt")
         json_path = os.path.join(resource_path, "class_name_tool.json")
 
@@ -30,8 +30,8 @@ class YoloModel:
         img_node,
         duration=1.0,
         conf_th=0.5,
-        dist_th=20,
-        angle_th=5.0,
+        dist_th=15,
+        angle_th=10.0,
     ):
         frames = self._get_frames(img_node, duration)
         results = self.model(frames, verbose=False)
@@ -52,23 +52,31 @@ class YoloModel:
                 #     continue
                 mask = res.masks.xy[i].astype(np.int32)
 
-                # 🔹 centroid
-                M = cv2.moments(mask)
-                if M["m00"] == 0:
-                    continue
+                # # 🔹 centroid
+                # M = cv2.moments(mask)
+                # if M["m00"] == 0:
+                #     continue
 
-                cx = M["m10"] / M["m00"]
-                cy = M["m01"] / M["m00"]
+                # cx = M["m10"] / M["m00"]
+                # cy = M["m01"] / M["m00"]
 
-                # OBB (orientation)
-                rect = cv2.minAreaRect(mask)
-                angle = self._normalize_angle(rect)
-                # 🔹 mask bounding box → 방향 판별용
-                x, y, w, h = cv2.boundingRect(mask)
+                # # OBB (orientation)
+                # rect = cv2.minAreaRect(mask)
+                # angle = self._normalize_angle(rect)
+                # # 🔹 mask bounding box → 방향 판별용
+                # x, y, w, h = cv2.boundingRect(mask)
+
+                # === PCA 기반 방향 ===
+                angle = self._pca_angle(mask)
+
+                # === minAreaRect ===
+                (cx, cy), (w, h), _ = cv2.minAreaRect(mask)
+                center = np.array([cx, cy])
+
 
                 raw.append({
                     "class": cls,
-                    "center": np.array([cx, cy]),
+                    "center": center,
                     "score": score,
                     "w": w,
                     "h": h,
@@ -103,42 +111,25 @@ class YoloModel:
             angles  = np.array([g["angle"] for g in group])
 
             mean_angle  = self._circular_mean_deg(angles)
-
-
-            # 🔥 wall 방향 판별
-            # orientation = None
-            # if det["class"] == "wall":
-            #     if widths.mean() > heights.mean():
-            #         orientation = "horizontal"
-            #     else:
-            #         orientation = "vertical"
-
-            # if abs(mean_angle) < angle_th:
-            #     orientation = "horizontal"
-            #     grasp_angle = 0.0
-            # elif abs(abs(mean_angle) - 90.0) < angle_th:
-            #     orientation = "vertical"
-            #     grasp_angle = 90.0
-            # else:
-            #     orientation = "misaligned"
-            #     grasp_angle = mean_angle  
-
-
             folded_angle = self._fold_angle_180(mean_angle)
 
             if folded_angle < angle_th:
                 orientation = "horizontal"
                 grasp_angle = 0.0
+                offset = np.array([0, -heights.mean() * 0.3])
             elif abs(folded_angle - 90.0) < angle_th:
                 orientation = "vertical"
                 grasp_angle = 90.0
+                offset = np.array([-widths.mean() * 0.3, 0])
             else:
                 orientation = "misaligned"
                 grasp_angle = mean_angle
+                offset = np.array([0, 0])
+
 
             fused.append({
                 "class": det["class"],
-                "center": centers.mean(axis=0),
+                "center": centers.mean(axis=0) + offset,
                 "score": scores.mean(),
                 "count": len(group),
                 "orientation": orientation,
@@ -147,6 +138,14 @@ class YoloModel:
 
         return fused
 
+    def _pca_angle(self, mask):
+        pts = mask.reshape(-1, 2)
+        pts = pts - pts.mean(axis=0)
+
+        _, _, vt = np.linalg.svd(pts)
+        direction = vt[0]
+        return np.degrees(np.arctan2(direction[1], direction[0]))
+    
     def _get_frames(self, img_node, duration):
         end = time.time() + duration
         frames = []
