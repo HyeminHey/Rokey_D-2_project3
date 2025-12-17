@@ -62,8 +62,8 @@ CELL_VALID_COLOR = Color(255, 255, 255) # Color(40, 120, 120)  # Cyan
 WALL_COLOR = Color(201, 174, 0) # Color(0, 0, 0)
 
 # Pawns color
-PAWN_A_COL = Color(255, 255, 210) # Color(158, 60, 60)  # Red
-PAWN_B_COL = Color(147, 0, 0) # Color(60, 60, 158)  # Blue
+PAWN_A_COL = Color(147, 0, 0) # Color(158, 60, 60)  # Red
+PAWN_B_COL = Color(103, 152, 253) # Color(60, 60, 158)  # Blue
 PAWN_BORDER_COL = Color(0, 0, 0) # Color(188, 188, 80)  # Yellow
 
 # Gauge bars

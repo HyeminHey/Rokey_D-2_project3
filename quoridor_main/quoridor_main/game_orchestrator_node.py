@@ -310,7 +310,7 @@ class GameOrchestratorNode(Node):
                 if self.ai_future.done():
                     res = self.ai_future.result()
                     self.ai_future = None
-                    self.robot_cmd = res.ai_cmd
+                    self.robot_cmd = list(res.ai_cmd)
 
                     # ================= 승패 판정 =================
 
@@ -616,7 +616,7 @@ class GameOrchestratorNode(Node):
             + PAWN_CELL / 2
         )
 
-        z = 70.0
+        z = 67.0
         rx, ry, rz = map(float, pick_pose_l[3:])
 
         return [x, y, z, rx, ry, rz]
@@ -639,7 +639,7 @@ class GameOrchestratorNode(Node):
             + PAWN_GAP / 2
         )
 
-        z = 50.0
+        z = 47.0
         rx, ry, rz = pick_pose_l[3:]
 
         if orientation == "horizontal":

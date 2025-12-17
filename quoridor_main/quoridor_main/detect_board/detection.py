@@ -304,7 +304,7 @@ class ObjectDetectionNode(Node):
         x, y, z, rx, ry, rz = self.get_robot_pos_safe()
         base2gripper = self.get_robot_pose_matrix(x, y, z, rx, ry, rz)
 
-        resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
+        resource_path = "/home/rokey/quoridor_ws/src/quoridor_main/resource"
         gripper2cam = np.load(os.path.join(resource_path, "T_gripper2camera.npy"))
 
         R_base = base2gripper[:3, :3] @ gripper2cam[:3, :3] @ R_cam

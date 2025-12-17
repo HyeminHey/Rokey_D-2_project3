@@ -30,7 +30,7 @@ class YoloModel:
         img_node,
         duration=1.0,
         conf_th=0.5,
-        dist_th=15,
+        dist_th=30,
         angle_th=10.0,
     ):
         frames = self._get_frames(img_node, duration)

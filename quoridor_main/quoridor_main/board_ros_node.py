@@ -67,6 +67,7 @@ class BoardRosNode(Node):
 
 
         self.pub = self.create_publisher(String, '/game_finished', 10)
+        self.after_detect = False
 
     def reset_game(self):
         # initializing
@@ -113,12 +114,18 @@ class BoardRosNode(Node):
             self.board.msg(650, 635, "Say \"Start Game\"", fsize=cfg.STATE_BOX_FONT_SIZE - 20)        
         
         elif self.now_state == "HUMAN_TURN":
-            # State Box
-            state_rect = pygame.Rect(600, 600, 560, 130)
-            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
-            self.board.msg(650, 620, "Now Detecting...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
-            self.board.msg(850, 675, "Don't Touch!", fsize=cfg.STATE_BOX_FONT_SIZE - 40)
-            pygame.display.flip()
+            if self.after_detect:
+                # State Box
+                state_rect = pygame.Rect(600, 600, 560, 130)
+                pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+                self.board.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+            elif not self.after_detect:
+                # State Box
+                state_rect = pygame.Rect(600, 600, 560, 130)
+                pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+                self.board.msg(650, 620, "Now Detecting...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
+                self.board.msg(850, 675, "Don't Touch!", fsize=cfg.STATE_BOX_FONT_SIZE - 40)
+                pygame.display.flip()
         
         elif self.now_state == "RULE_BREAK":
            # State Box
@@ -133,9 +140,10 @@ class BoardRosNode(Node):
             state_rect = pygame.Rect(600, 600, 560, 130)
             pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
             self.board.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
+            self.after_detect = True
 
         elif self.now_state == "ROBOT_THINK":
-            pass
+            self.after_detect = False
         
         elif self.now_state == "ROBOT_PLAN":
             pass
@@ -162,9 +170,6 @@ class BoardRosNode(Node):
         # self.get_logger().info(f"Received added: {self.last_request}")
         if self.last_request:
                 act_suc = self.board.apply_player_action(self.last_request)
-        self.get_logger().info(f"act_suc={act_suc}")
-        if act_suc == None:
-            self.get_logger().info(f"act_suc is none")
 
         # finished
         if type(self.board.won_player) == int:
@@ -173,10 +178,8 @@ class BoardRosNode(Node):
                 response.ai_cmd = [0, 0, 0]
                 msg.data = "player"
             elif self.board.won_player == 1:
-                self.get_logger().info("ai win 진입")
-                if act_suc:
+                if act_suc is None:
                     ai_act = self.board.ai_action
-                    self.get_logger().info(f"ai_act = {ai_act}")
                     if isinstance(ai_act, ActionMovePawn):
                         ai_t = -1
                         ai_r = ai_act.dest.row
@@ -185,7 +188,8 @@ class BoardRosNode(Node):
                     response.ai_cmd = res_list
                     msg.data = "AI"
             self.pub.publish(msg)
-            self.get_logger().info(f"Game Finished Topic published. Winner is {msg.data}")
+            self.get_logger().info(f"Game Finished Topic published. Winner is {msg.data}")            
+
             return response
 
 
