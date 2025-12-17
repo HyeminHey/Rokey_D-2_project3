@@ -13,6 +13,12 @@ class YoloModel:
         model_path = os.path.join(resource_path, "quoridor_final.pt")
         json_path = os.path.join(resource_path, "class_name_tool.json")
 
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"YOLO model not found: {model_path}")
+
+        if not os.path.exists(json_path):
+            raise FileNotFoundError(f"Class json not found: {json_path}")
+
         self.model = YOLO(model_path)
 
         with open(json_path, "r") as f:

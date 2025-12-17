@@ -97,20 +97,6 @@ class BoardRosNode(Node):
         log(f"level = {cfg.LEVEL}")
         self.board.reset_AI()
 
-
-    # # 나중에 "CLEAN_UP"일 때 심으면 될 듯
-    # def cleanup_listener_callback(self, msg):
-    #     set_mode = msg.data
-    #     if type(set_mode) == int:
-    #         if set_mode == 1: # 정리 시작 (정리 모드 on)
-    #             # State Box
-    #             state_rect = pygame.Rect(600, 600, 560, 130)
-    #             pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
-    #             # self.msg(650, 635, "-- Your Turn --", fsize=cfg.STATE_BOX_FONT_SIZE)
-    #             self.board.msg(625, 642, "Resetting the Board...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
-    #         elif set_mode == 0:
-    #             self.reset_game()            
-    
     def state_listener_callback(self, msg):
         self.now_state = str(msg.data)
 
@@ -133,6 +119,14 @@ class BoardRosNode(Node):
             self.board.msg(650, 620, "Now Detecting...", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
             self.board.msg(850, 675, "Don't Touch!", fsize=cfg.STATE_BOX_FONT_SIZE - 40)
             pygame.display.flip()
+        
+        elif self.now_state == "RULE_BREAK":
+           # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(655, 620, "Rule Violation", fsize=cfg.STATE_BOX_FONT_SIZE - 30)
+            self.board.msg(850, 675, "Resetting...", fsize=cfg.STATE_BOX_FONT_SIZE - 40)
+            pygame.display.flip()
 
         elif self.now_state == "PRE_DET":
             # State Box
@@ -151,6 +145,12 @@ class BoardRosNode(Node):
             state_rect = pygame.Rect(600, 600, 560, 130)
             pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
             self.board.msg(680, 640, "Now Moving...", fsize=cfg.STATE_BOX_FONT_SIZE - 15)
+        
+        elif self.now_state == "CLEAN_UP":
+            # State Box
+            state_rect = pygame.Rect(600, 600, 560, 130)
+            pygame.draw.rect(self.screen, cfg.STATE_BOX_COLOR, state_rect, 0)
+            self.board.msg(665, 640, "Now Cleaning...", fsize=cfg.STATE_BOX_FONT_SIZE - 15)
         
 
 

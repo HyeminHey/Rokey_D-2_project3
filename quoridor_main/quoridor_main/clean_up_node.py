@@ -4,12 +4,13 @@
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Trigger
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from rclpy.action import ActionClient
 
 from qulido_robot_msgs.srv import GetBoardState
 from qulido_robot_msgs.msg import MotionPrimitive, MotionSequence
 from qulido_robot_msgs.action import ExecuteMotion
+from qulido_robot_msgs.srv import CleanUpTrigger
 
 
 
@@ -24,7 +25,7 @@ class CleanUpNode(Node):
 
         # ---------- Service Server ----------
         self.srv = self.create_service(
-            Trigger,
+            CleanUpTrigger,
             '/clean_up',
             self.on_cleanup_request
         )
@@ -32,6 +33,9 @@ class CleanUpNode(Node):
         # ---------- Clients ----------
         self.vision_client = self.create_client(GetBoardState, "/vision/get_board_state")
         self.motion_client = ActionClient(self, ExecuteMotion, "/execute_motion")
+
+        # -----------Publisher---------
+        self.end_pub = self.create_publisher(Bool, '/clean_up_finished', 10)
 
         # ---------- State ----------
         self._active = False
@@ -44,6 +48,8 @@ class CleanUpNode(Node):
 
         self.current_phase = None   # "PAWN" | "WALL"
         self.current_idx = 0
+        self.sorted_walls = 0
+        self.wall_used = 0
 
         # ---------- Poses (TODO: 실제 값) ----------
         self.detection_pose = None
@@ -59,11 +65,14 @@ class CleanUpNode(Node):
             [231.01, 102.933, 54.014, 152.954, 179.919, -117.273],
             [230.446, 162.316, 54.292, 123.353, 179.93, -146.878]
         ]
-        # self.player_wall_init_pose = [
-        #     [563.29, 257.90, 58.06, 99.04, -179.72, 98.55],
-        #     # 이후는 x만!
-        # ]
-        self.player_wall_init_pose = [563.29, 257.90, 58.06, 99.04, -179.72, 98.55]
+        self.player_wall_init_pose = [
+            [563.29, 257.90, 58.06, 99.04, -179.72, 98.55],
+            [533.29, 257.90, 58.06, 99.04, -179.72, 98.55],
+            [503.29, 257.90, 58.06, 99.04, -179.72, 98.55],
+            [473.29, 257.90, 58.06, 99.04, -179.72, 98.55],
+            [443.29, 257.90, 58.06, 99.04, -179.72, 98.55],
+            [413.29, 257.90, 58.06, 99.04, -179.72, 98.55]
+        ]
 
         self.AI_pawn_init_pose = [292.34, 9.96, 69.72, 41.50, -179.47, 41.56]
         self.player_pawn_init_pose = [654.72, 16.22, 67.54, 50.38, -179.66, 50.56]
@@ -95,15 +104,18 @@ class CleanUpNode(Node):
             response.success = False
             response.message = "Cleanup already running"
             return response
+        
+        self.wall_used = request.wall_used
 
+        self.log(f"request received. wall_used = {self.wall_used}")
         self._active = True
         self._response = response
         self._clean_up_initialized = False
         self.motion_goal_future = None
         self.motion_result_future = None
         self.vision_future = None
-        self.log(f"initialized = {self._clean_up_initialized}")
         self.main_timer = self.create_timer(0.1, self.plan_clean_up_motion)
+        response.success = True
         return response
 
     # ==================================================
@@ -129,11 +141,10 @@ class CleanUpNode(Node):
             goal_handle = self.motion_goal_future.result()  # ClientGoalHandle
             self.motion_goal_future = None
 
-            # # 예외처리
-            # if not goal_handle.accepted:
-            #     self.log("Motion goal rejected → ERROR")
-            #     self.state = OrchestratorState.ERROR
-            #     return
+            # 예외처리
+            if not goal_handle.accepted:
+                self.log("Motion goal rejected → ERROR")
+                return
 
             self.motion_result_future = goal_handle.get_result_async()
             return
@@ -147,12 +158,12 @@ class CleanUpNode(Node):
                 self.log("Arrived at camera pose → requesting board state")
                 # Vision 호출
                 if self.vision_client.wait_for_service(timeout_sec=0.0):
-                    self.vision_future = self.vision_client.call_async(GetBoardState.Request())
+                    req = GetBoardState.Request()
+                    req.now_state = "CLEAN_UP"
+                    self.vision_future = self.vision_client.call_async(req)
             else:
-                # # 예외처리
-                # self.log("Motion failed → ERROR")
-                # self.state = OrchestratorState.ERROR
-                pass
+                # 예외처리
+                self.log("Motion failed → ERROR")
             return
 
         # --- Step 4: Vision 결과 처리 ---
@@ -162,45 +173,12 @@ class CleanUpNode(Node):
 
             self.board_state = [row.data for row in res.board_state]
             self.seq_list = []
+            self.sorted_walls = 0
 
             for cmd in self.board_state:
                 motion_seq = self.create_motion_sequence(cmd)
                 self.seq_list.append(motion_seq)
 
-            # self._clean_up_started = True
-            # # self.now_robot_action = False
-            # self.now_obj = 0
-            # self.obj_cnt = len(self.board_state)
-
-        # if self._clean_up_started == True:
-        #     while not self.now_robot_action:
-        #         robot_motion = self.seq_list[self.now_obj]
-        #         if self.motion_goal_future is None:
-        #             goal = orch.build_motion_goal(robot_motion)
-        #             self.motion_goal_future = self.motion_client.send_goal_async(goal)
-        #             continue
-
-        #         if self.motion_goal_future.done() and self.motion_result_future is None:
-        #             goal_handle = self.motion_goal_future.result()
-        #             if not goal_handle.accepted: # 에러 예외처리
-        #                 continue
-        #             self.motion_result_future = goal_handle.get_result_async()
-        #             continue
-
-        #         if self.motion_result_future and self.motion_result_future.done():
-        #             result = self.motion_result_future.result().result
-        #             self.motion_goal_future = None
-        #             self.motion_result_future = None
-
-        #             if result.success:
-        #                 self.log("하나 정리 끝")
-        #                 if self.now_obj == self.obj_cnt - 1:
-        #                     self.now_robot_action = False
-        #                     self._clean_up_started = False
-        #                     break
-        #                 self.now_obj += 1
-        #             else:
-        #                 pass # 에러 예외처리
 
         if self.seq_list and not self._clean_up_started:
             self._clean_up_started = True
@@ -211,17 +189,15 @@ class CleanUpNode(Node):
                 self._clean_up_started = False
                 return
             
-            # 🔴 plan 타이머 끄기
+            # 🔴 main 타이머 끄기
             if self.main_timer:
                 self.main_timer.cancel()
                 self.main_timer = None
 
-            # 🟢 cleanup 타이머 켜기
+            # 🟢 robot 타이머 켜기
             self.robot_timer = self.create_timer(
                 0.1, self.robot_motion_execute
             )
-
-
 
 
     def robot_motion_execute(self):
@@ -262,13 +238,17 @@ class CleanUpNode(Node):
                 self.log("하나 정리 끝")
                 if self.now_obj == self.obj_cnt - 1:
                     self.log(f"End Cleaning")
+
+                    msg = Bool()
+                    msg.data = True
+                    self.end_pub.publish(msg)
+
                     self.seq_list = []
                     self._clean_up_started = False
                     self._active = False
                     if self.robot_timer:
                         self.robot_timer.cancel()
                         self.robot_timer = None
-                    # self.main_timer = self.create_timer(0.1, self.plan_clean_up_motion)
                     return
                 self.now_obj += 1
 
@@ -323,8 +303,14 @@ class CleanUpNode(Node):
                     angle = pos_b[2]
                     pos_b_xy = pos_b[:2]
                     pos_orig = self.set_wall_pose(*pos_b_xy, "misaligned", angle)
-                # 목적지 일단 하나만 만들고 그다음에 wall_used해보자.
-                pos_dst = self.set_wall_pose(self.player_wall_init_pose[0], self.player_wall_init_pose[1], "horizontal")
+                
+                self.get_logger().info(f"sorted={self.sorted_walls}, used={self.wall_used}")
+                if self.sorted_walls < self.wall_used:
+                    self.get_logger().info(f"ai wall = ({self.AI_wall_init_pose[self.sorted_walls][0]},{self.AI_wall_init_pose[self.sorted_walls][1]}")
+                    pos_dst = self.set_wall_pose(self.AI_wall_init_pose[self.sorted_walls][0], self.AI_wall_init_pose[self.sorted_walls][1], "vertical")
+                elif self.sorted_walls >= self.wall_used:
+                    self.get_logger().info(f"player wall = ({self.player_wall_init_pose[self.sorted_walls - self.wall_used][0]},{self.player_wall_init_pose[self.sorted_walls - self.wall_used][1]}")
+                    pos_dst = self.set_wall_pose(self.player_wall_init_pose[self.sorted_walls - self.wall_used][0], self.player_wall_init_pose[self.sorted_walls - self.wall_used][1], "horizontal")
                 # 출발지cell (위)
                 pos_orig_up = pos_orig.copy()
                 pos_orig_up[2] += 60
@@ -347,37 +333,10 @@ class CleanUpNode(Node):
                         {'primitive': 'movej_pose', 'pose': pick_pose}
                     ]
                 }
+                self.sorted_walls += 1
+                self.get_logger().info(f"sorted walls = {self.sorted_walls}")
                 
-                
-            # else: # wall
-            #     pos_obj = self.wall_pose[self.wall_used]
-            #     self.wall_used+=1
-            #     if obj==-2:
-            #         pos = self.wall_board_to_base(*pos_b, "horizontal")
-            #     elif obj==2:
-            #         pos = self.wall_board_to_base(*pos_b, "vertical")
-            #     pos_pre = pos.copy()
-            #     pos_pre[2] += 60
-            #     pos_obj_pre = pos_obj.copy()
-            #     pos_obj_pre[2] += 60
-            #     pos[2] += 10
-            #     motion = {
-            #         'sequence': [
-            #             {'primitive': 'operate_gripper', 'width': 350},
-            #             {'primitive': 'movej_pose', 'pose': pick_pose},
-            #             {'primitive': 'movel_pose', 'pose': pos_obj_pre},
-            #             {'primitive': 'movel_pose', 'pose': pos_obj},
-            #             {'primitive': 'operate_gripper', 'width': 250},
-            #             {'primitive': 'movel_pose', 'pose': pos_obj_pre},
-            #             {'primitive': 'movel_pose', 'pose': pos_pre},
-            #             {'primitive': 'movel_pose', 'pose': pos},
-            #             {'primitive': 'force_control'},
-            #             {'primitive': 'operate_gripper', 'width': 350},
-            #             {'primitive': 'movel_pose', 'pose': pos_pre},
-            #             {'primitive': 'movej_pose', 'pose': pick_pose}
-            #         ]
-            #     }
-            print(motion)
+            # print(motion)
 
             return motion
 
@@ -414,9 +373,6 @@ class CleanUpNode(Node):
             elif rz < -180.0:
                 rz += 360.0
 
-        # else:
-        #     raise ValueError(f"Unknown wall orientation: {orientation}")
-
         return list(map(float, [x, y, z, rx, ry, rz]))
 
     def build_motion_goal(self, motion):
@@ -442,17 +398,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
-    # # ==================================================
-    # # Finish
-    # # ==================================================
-    # def finish(self, success, message):
-    #     self.get_logger().info(f"Cleanup finished: {message}")
-
-    #     self._response.success = success
-    #     self._response.message = message
-
-    #     self._active = False
-    #     self._response = None
-

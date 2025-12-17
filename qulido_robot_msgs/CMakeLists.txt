@@ -20,6 +20,7 @@ set(msg_files
 set(srv_files
   "srv/GetBoardState.srv"
   "srv/AiCompute.srv"
+  "srv/CleanUpTrigger.srv"
   "srv/FixRuleBreak.srv"
 )
 

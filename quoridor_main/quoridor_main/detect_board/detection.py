@@ -9,8 +9,6 @@ from qulido_robot_msgs.srv import GetBoardState
 from qulido_robot_msgs.msg import Int32Row
 import DR_init
 import sys, os
-from quoridor_main.game_orchestrator_node import OrchestratorState
-from quoridor_main.game_orchestrator_node import GameOrchestratorNode
 
 # for single robot
 ROBOT_ID = "dsr01"
@@ -94,6 +92,9 @@ class ObjectDetectionNode(Node):
             self.img_node.get_camera_intrinsic, "camera intrinsics"
         )
 
+        self.now_state = None
+
+
         # 🔥 결과 저장용
         self.vision_srv = self.create_service(
             GetBoardState,
@@ -105,6 +106,8 @@ class ObjectDetectionNode(Node):
 
     def handle_get_board_state(self, request, response):
         self.get_logger().info("📸 Vision request received")
+        self.now_state = request.now_state
+        self.get_logger().info(f"now_state = {self.now_state}")
 
         # 이전 결과 초기화
         self.red_pawns = []
@@ -133,44 +136,44 @@ class ObjectDetectionNode(Node):
         )
 
         # 실제코드
-        # if GameOrchestratorNode.state == OrchestratorState.HUMAN_TURN:
-        #     # 🔥 Int32Row[] 로 변환
-        #     response.board_state = []
-        #     for item in board_array:
-        #         row = Int32Row()
-        #         row.data = item   # [type, r, c]
-        #         response.board_state.append(row)
+        if self.now_state == "HUMAN_TURN":
+            # 🔥 Int32Row[] 로 변환
+            response.board_state = []
+            for item in board_array:
+                row = Int32Row()
+                row.data = item   # [type, r, c]
+                response.board_state.append(row)
 
-        #     self.get_logger().info(
-        #         f"📤 Vision response: {[r.data for r in response.board_state]}"
-        #     )
+            self.get_logger().info(
+                f"📤 Vision response: {[r.data for r in response.board_state]}"
+            )
 
-        # elif GameOrchestratorNode.state == OrchestratorState.CLEAN_UP:
-        #     # 🔥 Int32Row[] 로 변환
-        #     response.board_state = []
-        #     for item in clean_board_array:
-        #         row = Int32Row()
-        #         row.data = item   # [type, r, c]
-        #         response.board_state.append(row)
+        elif self.now_state == "CLEAN_UP":
+            # 🔥 Int32Row[] 로 변환
+            response.board_state = []
+            for item in clean_board_array:
+                row = Int32Row()
+                row.data = item   # [type, r, c]
+                response.board_state.append(row)
 
-        #     self.get_logger().info(
-        #         f"📤 Vision response: {[r.data for r in response.board_state]}"
-        #     )
-        # return response
-
-
-        #테스트용
-        # 🔥 Int32Row[] 로 변환
-        response.board_state = []
-        for item in clean_board_array:
-            row = Int32Row()
-            row.data = item   # [type, r, c]
-            response.board_state.append(row)
-
-        self.get_logger().info(
-            f"📤 Vision response: {[r.data for r in response.board_state]}"
-        )
+            self.get_logger().info(
+                f"📤 Vision response: {[r.data for r in response.board_state]}"
+            )
         return response
+
+
+        # #테스트용
+        # # 🔥 Int32Row[] 로 변환
+        # response.board_state = []
+        # for item in clean_board_array:
+        #     row = Int32Row()
+        #     row.data = item   # [type, r, c]
+        #     response.board_state.append(row)
+
+        # self.get_logger().info(
+        #     f"📤 Vision response: {[r.data for r in response.board_state]}"
+        # )
+        # return response
 
 
     def process_scene(self):
@@ -220,6 +223,13 @@ class ObjectDetectionNode(Node):
 
 
     def _camera_to_base(self, camera_coords):
+        # detection.py 기준 경로
+        # current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # # quoridor_main/detect_board → quoridor_main → resource
+        # resource_path = os.path.abspath(
+        #     os.path.join(current_dir, "..", "..", "resource")
+        # )
         resource_path = "/home/hyemin/quoridor_ws/src/quoridor_main/resource"
         gripper2cam = np.load(
             os.path.join(resource_path, "T_gripper2camera.npy")
