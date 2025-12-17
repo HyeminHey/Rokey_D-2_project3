@@ -178,7 +178,7 @@ class BoardRosNode(Node):
                 response.ai_cmd = [0, 0, 0]
                 msg.data = "player"
             elif self.board.won_player == 1:
-                if act_suc is None:
+                if act_suc:
                     ai_act = self.board.ai_action
                     if isinstance(ai_act, ActionMovePawn):
                         ai_t = -1

@@ -351,7 +351,7 @@ class CleanUpNode(Node):
             pos_dst[2] += 10
             motion = {
                 'sequence': [
-                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'operate_gripper', 'width': 550},
                     {'primitive': 'movej_pose', 'pose': pick_pose},
                     {'primitive': 'movel_pose', 'pose': pos_orig_up},
                     {'primitive': 'movel_pose', 'pose': pos_orig},
@@ -360,7 +360,7 @@ class CleanUpNode(Node):
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movel_pose', 'pose': pos_dst},
                     {'primitive': 'force_control'},
-                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'operate_gripper', 'width': 550},
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movej_pose', 'pose': pick_pose}
                 ]

@@ -163,8 +163,8 @@ class RobotCtrlNode(Node):
             dir=[0,0,1,0,0,0],
             mod=DR_FC_MOD_REL
         )
-        while not check_force_condition(DR_AXIS_Z, max=4):
-            print("Y축 힘이 4N 이상이 될 때까지 대기...")
+        while not check_force_condition(DR_AXIS_Z, max=5):
+            print("Y축 힘이 5N 이상이 될 때까지 대기...")
         release_force()
         release_compliance_ctrl()
         set_ref_coord(0)

@@ -547,9 +547,9 @@ class GameOrchestratorNode(Node):
             pos = self.pawn_board_to_base(*pos_b)
             pos_obj = self.pawn_board_to_base(*pos_obj_b)
             pos_pre = pos.copy()
-            pos_pre[2] += 60
+            pos_pre[2] += 80
             pos_obj_pre = pos_obj.copy()
-            pos_obj_pre[2] += 60
+            pos_obj_pre[2] += 80
             pos[2] += 10
             motion = {
                 'sequence': [
@@ -575,9 +575,9 @@ class GameOrchestratorNode(Node):
             elif obj==2:
                 pos = self.wall_board_to_base(*pos_b, "vertical")
             pos_pre = pos.copy()
-            pos_pre[2] += 60
+            pos_pre[2] += 80
             pos_obj_pre = pos_obj.copy()
-            pos_obj_pre[2] += 60
+            pos_obj_pre[2] += 80
             pos[2] += 10
             motion = {
                 'sequence': [
@@ -639,7 +639,7 @@ class GameOrchestratorNode(Node):
             + PAWN_GAP / 2
         )
 
-        z = 47.0
+        z = 54.0
         rx, ry, rz = pick_pose_l[3:]
 
         if orientation == "horizontal":
