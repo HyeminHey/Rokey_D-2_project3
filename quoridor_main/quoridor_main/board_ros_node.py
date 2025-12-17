@@ -162,6 +162,9 @@ class BoardRosNode(Node):
         # self.get_logger().info(f"Received added: {self.last_request}")
         if self.last_request:
                 act_suc = self.board.apply_player_action(self.last_request)
+        self.get_logger().info(f"act_suc={act_suc}")
+        if act_suc == None:
+            self.get_logger().info(f"act_suc is none")
 
         # finished
         if type(self.board.won_player) == int:
@@ -170,8 +173,10 @@ class BoardRosNode(Node):
                 response.ai_cmd = [0, 0, 0]
                 msg.data = "player"
             elif self.board.won_player == 1:
-                if act_suc is None:
+                self.get_logger().info("ai win 진입")
+                if act_suc:
                     ai_act = self.board.ai_action
+                    self.get_logger().info(f"ai_act = {ai_act}")
                     if isinstance(ai_act, ActionMovePawn):
                         ai_t = -1
                         ai_r = ai_act.dest.row
