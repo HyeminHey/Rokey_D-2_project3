@@ -304,7 +304,7 @@ class CleanUpNode(Node):
             pos_orig_up[2] += 60
             pos_dst_up = pos_dst.copy()
             pos_dst_up[2] += 60
-            pos_dst[2] += 10
+            # pos_dst[2] += 10
             motion = {
                 'sequence': [
                     {'primitive': 'operate_gripper', 'width': 550},
@@ -315,7 +315,7 @@ class CleanUpNode(Node):
                     {'primitive': 'movel_pose', 'pose': pos_orig_up},
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movel_pose', 'pose': pos_dst},
-                    {'primitive': 'force_control'},
+                    # {'primitive': 'force_control'},
                     {'primitive': 'operate_gripper', 'width': 550},
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movej_pose', 'pose': pick_pose}
@@ -348,7 +348,7 @@ class CleanUpNode(Node):
             pos_orig_up[2] += 60
             pos_dst_up = pos_dst.copy()
             pos_dst_up[2] += 60
-            pos_dst[2] += 10
+            # pos_dst[2] += 10
             motion = {
                 'sequence': [
                     {'primitive': 'operate_gripper', 'width': 550},
@@ -359,7 +359,7 @@ class CleanUpNode(Node):
                     {'primitive': 'movel_pose', 'pose': pos_orig_up},
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movel_pose', 'pose': pos_dst},
-                    {'primitive': 'force_control'},
+                    # {'primitive': 'force_control'},
                     {'primitive': 'operate_gripper', 'width': 550},
                     {'primitive': 'movel_pose', 'pose': pos_dst_up},
                     {'primitive': 'movej_pose', 'pose': pick_pose}
