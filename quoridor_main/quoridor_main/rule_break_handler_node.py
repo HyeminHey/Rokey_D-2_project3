@@ -153,7 +153,7 @@ class RuleBreakHandlerNode(Node):
             
             motion = {
                 'sequence': [
-                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'operate_gripper', 'width': 500},
                     {'primitive': 'movej_pose', 'pose': pick_pose},
                     {'primitive': 'movel_pose', 'pose': wrong_pos_pre},
                     {'primitive': 'movel_pose', 'pose': wrong_pos},
@@ -161,7 +161,7 @@ class RuleBreakHandlerNode(Node):
                     {'primitive': 'movel_pose', 'pose': wrong_pos_pre},
                     {'primitive': 'movel_pose', 'pose': original_pos_pre},
                     {'primitive': 'movel_pose', 'pose': original_pos},
-                    {'primitive': 'operate_gripper', 'width': 450},
+                    {'primitive': 'operate_gripper', 'width': 500},
                     {'primitive': 'movel_pose', 'pose': original_pos_pre},
                     {'primitive': 'movej_pose', 'pose': pick_pose}
                 ]
@@ -192,7 +192,7 @@ class RuleBreakHandlerNode(Node):
                     {'primitive': 'movej_pose', 'pose': pick_pose},
                     {'primitive': 'movel_pose', 'pose': wrong_pos_pre},
                     {'primitive': 'movel_pose', 'pose': wrong_pos},
-                    {'primitive': 'operate_gripper', 'width': 250},
+                    {'primitive': 'operate_gripper', 'width': 240},
                     {'primitive': 'movel_pose', 'pose': wrong_pos_pre},
                     {'primitive': 'movel_pose', 'pose': discard_pos_pre},
                     {'primitive': 'movel_pose', 'pose': discard_pos},

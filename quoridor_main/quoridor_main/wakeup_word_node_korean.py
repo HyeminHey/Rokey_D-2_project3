@@ -17,7 +17,6 @@ import pvporcupine
 from dotenv import load_dotenv
 from ament_index_python.packages import get_package_share_directory
 
-from std_msgs.msg import Bool, String
 from std_srvs.srv import Trigger
 
 

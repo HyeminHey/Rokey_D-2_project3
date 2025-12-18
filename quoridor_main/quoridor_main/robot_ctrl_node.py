@@ -15,7 +15,9 @@ import sys
 # for single robot
 ROBOT_ID = "dsr01"
 ROBOT_MODEL = "m0609"
-VELOCITY, ACC = 80, 60
+VELOCITY_J = 80
+VELOCITY_L = 120
+ACC = 60
 GRIPPER_NAME = "rg2"
 TOOLCHARGER_IP = "192.168.1.1"
 TOOLCHARGER_PORT = "502"
@@ -124,7 +126,7 @@ class RobotCtrlNode(Node):
         )
 
         # TODO: replace with IK + controller
-        movej(posj([j1, j2, j3, j4, j5, j6]), vel=VELOCITY, acc=ACC)
+        movej(posj([j1, j2, j3, j4, j5, j6]), vel=VELOCITY_J, acc=ACC)
         wait(1.0)
         return True
 
@@ -143,7 +145,7 @@ class RobotCtrlNode(Node):
         )
 
         # TODO: replace with IK + controller
-        movel(posx([x, y, z, r, p, yaw]), vel=VELOCITY, acc=ACC)
+        movel(posx([x, y, z, r, p, yaw]), vel=VELOCITY_L, acc=ACC)
         wait(1.0)
         return True
 
