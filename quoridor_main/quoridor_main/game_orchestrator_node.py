@@ -423,7 +423,9 @@ class GameOrchestratorNode(Node):
 
             # ---------------- CLEAN_UP ----------------
             elif self.state == OrchestratorState.CLEAN_UP:
-
+                msg = String()
+                msg.data = self.state.name
+                self.state_pub.publish(msg)
 
                 if self.cleanup_enter_time is None:
                     self.cleanup_enter_time = self.get_clock().now()
